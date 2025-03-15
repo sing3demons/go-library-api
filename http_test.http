@@ -1,0 +1,22 @@
+@uri=http://localhost:8080
+
+### Get all books
+GET {{uri}}/books HTTP/1.1
+
+### Get book by id
+GET {{uri}}/books/1 HTTP/1.1
+
+### Create a user
+POST {{uri}}/users/register HTTP/1.1
+Content-Type: application/json
+
+{
+  "name": "John Doe",
+  "email": "alice@example.com"
+}
+
+### Get users by id
+GET {{uri}}/users/54aa4c48-32d3-4726-9591-42962be01aa2 HTTP/1.1
+
+### Get all users
+GET {{uri}}/users HTTP/1.1
