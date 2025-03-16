@@ -13,10 +13,17 @@ type Row interface {
 	Scan(dest ...any) error
 }
 
+type Rows interface {
+	Next() bool
+	Scan(dest ...any) error
+	Close() error
+	Err() error
+}
+
 type DB interface {
 	// Exec(query string, args ...interface{}) (sql.Result, error)
 	QueryRowContext(ctx context.Context, query string, args ...interface{}) Row
-	QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error)
+	QueryContext(ctx context.Context, query string, args ...any) (Rows, error)
 	Close() error
 }
 
@@ -49,10 +56,40 @@ func (p *Postgres) QueryRowContext(ctx context.Context, query string, args ...an
 	return p.DB.QueryRowContext(ctx, query, args...)
 }
 
-func (p *Postgres) QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error) {
-	return p.DB.QueryContext(ctx, query, args...)
+func (p *Postgres) QueryContext(ctx context.Context, query string, args ...any) (Rows, error) {
+	// return p.DB.QueryContext(ctx, query, args...)
+	rows, err := p.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	// return NewSqlRowsWrapper(rows), nil
+	return rows, nil
 }
 
 func (p *Postgres) Close() error {
 	return p.DB.Close()
+}
+
+func NewSqlRowsWrapper(rows *sql.Rows) Rows {
+	return &sqlRowsWrapper{rows: rows}
+}
+
+type sqlRowsWrapper struct {
+	rows *sql.Rows
+}
+
+func (r *sqlRowsWrapper) Next() bool {
+	return r.rows.Next()
+}
+
+func (r *sqlRowsWrapper) Scan(dest ...any) error {
+	return r.rows.Scan(dest...)
+}
+
+func (r *sqlRowsWrapper) Close() error {
+	return r.rows.Close()
+}
+
+func (r *sqlRowsWrapper) Err() error {
+	return r.rows.Err()
 }
