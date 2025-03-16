@@ -10,29 +10,29 @@ import (
 )
 
 type SingleResult interface {
-	Decode(interface{}) error
+	Decode(any) error
 }
 
 type Cursor interface {
 	Close(context.Context) error
 	Next(context.Context) bool
-	Decode(interface{}) error
-	All(context.Context, interface{}) error
+	Decode(any) error
+	All(context.Context, any) error
 }
 
 type InsertOneResult struct {
-	InsertedID   interface{}
+	InsertedID   any
 	Acknowledged bool
 }
 
 type Collection interface {
-	FindOne(ctx context.Context, filter interface{}, opts ...options.Lister[options.FindOneOptions]) SingleResult
-	InsertOne(ctx context.Context, document interface{}, opts ...options.Lister[options.InsertOneOptions]) (*InsertOneResult, error)
+	FindOne(ctx context.Context, filter any, opts ...options.Lister[options.FindOneOptions]) SingleResult
+	InsertOne(ctx context.Context, document any, opts ...options.Lister[options.InsertOneOptions]) (*InsertOneResult, error)
 	// InsertMany(context.Context, []interface{}) ([]interface{}, error)
-	DeleteOne(ctx context.Context, filter interface{}, opts ...options.Lister[options.DeleteOneOptions]) (*DeleteResult, error)
-	Find(context.Context, interface{}, ...options.Lister[options.FindOptions]) (Cursor, error)
-	CountDocuments(context.Context, interface{}, ...options.Lister[options.CountOptions]) (int64, error)
-	UpdateOne(ctx context.Context, filter, update interface{}, opts ...options.Lister[options.UpdateOneOptions]) (*UpdateResult, error)
+	DeleteOne(ctx context.Context, filter any, opts ...options.Lister[options.DeleteOneOptions]) (*DeleteResult, error)
+	Find(context.Context, any, ...options.Lister[options.FindOptions]) (Cursor, error)
+	CountDocuments(context.Context, any, ...options.Lister[options.CountOptions]) (int64, error)
+	UpdateOne(ctx context.Context, filter, update any, opts ...options.Lister[options.UpdateOneOptions]) (*UpdateResult, error)
 }
 
 type Database interface {
@@ -41,10 +41,7 @@ type Database interface {
 }
 
 type DeleteResult struct {
-	DeletedCount int64 // The number of documents deleted.
-
-	// Operation performed with an acknowledged write. Values for other fields may
-	// not be deterministic if the write operation was unacknowledged.
+	DeletedCount int64
 	Acknowledged bool
 }
 
@@ -59,7 +56,7 @@ type UpdateResult struct {
 	MatchedCount  int64
 	ModifiedCount int64
 	UpsertedCount int64
-	UpsertedID    interface{}
+	UpsertedID    any
 }
 type mongoClient struct {
 	cl *mongo.Client
@@ -117,10 +114,10 @@ func (m *mongoDatabase) Collection(name string) Collection {
 		coll: m.db.Collection(name),
 	}
 }
-func (m *mongoCollection) CountDocuments(ctx context.Context, filter interface{}, opts ...options.Lister[options.CountOptions]) (int64, error) {
+func (m *mongoCollection) CountDocuments(ctx context.Context, filter any, opts ...options.Lister[options.CountOptions]) (int64, error) {
 	return m.coll.CountDocuments(ctx, filter, opts...)
 }
-func (m *mongoCollection) InsertOne(ctx context.Context, document interface{}, opts ...options.Lister[options.InsertOneOptions]) (*InsertOneResult, error) {
+func (m *mongoCollection) InsertOne(ctx context.Context, document any, opts ...options.Lister[options.InsertOneOptions]) (*InsertOneResult, error) {
 	r, err := m.coll.InsertOne(ctx, document, opts...)
 	return &InsertOneResult{
 		InsertedID:   r.InsertedID,
@@ -135,12 +132,12 @@ func newDeleteResult(r *mongo.DeleteResult) *DeleteResult {
 	}
 }
 
-func (m *mongoCollection) DeleteOne(ctx context.Context, filter interface{}, opts ...options.Lister[options.DeleteOneOptions]) (*DeleteResult, error) {
+func (m *mongoCollection) DeleteOne(ctx context.Context, filter any, opts ...options.Lister[options.DeleteOneOptions]) (*DeleteResult, error) {
 	r, err := m.coll.DeleteOne(ctx, filter, opts...)
 	return newDeleteResult(r), err
 }
 
-func (m *mongoCollection) Find(ctx context.Context, filter interface{}, opts ...options.Lister[options.FindOptions]) (Cursor, error) {
+func (m *mongoCollection) Find(ctx context.Context, filter any, opts ...options.Lister[options.FindOptions]) (Cursor, error) {
 	cursor, err := m.coll.Find(ctx, filter, opts...)
 	if err != nil {
 		return nil, err
@@ -160,21 +157,21 @@ func (m *mongoCursor) Decode(v interface{}) error {
 	return m.mc.Decode(v)
 }
 
-func (m *mongoCursor) All(ctx context.Context, v interface{}) error {
+func (m *mongoCursor) All(ctx context.Context, v any) error {
 	return m.mc.All(ctx, v)
 }
 
-func (m *mongoSingleResult) Decode(v interface{}) error {
+func (m *mongoSingleResult) Decode(v any) error {
 	return m.sr.Decode(v)
 }
 
-func (m *mongoCollection) FindOne(ctx context.Context, filter interface{}, opts ...options.Lister[options.FindOneOptions]) SingleResult {
+func (m *mongoCollection) FindOne(ctx context.Context, filter any, opts ...options.Lister[options.FindOneOptions]) SingleResult {
 	return &mongoSingleResult{
 		sr: m.coll.FindOne(ctx, filter, opts...),
 	}
 }
 
-func (m *mongoCollection) UpdateOne(ctx context.Context, filter, update interface{}, opts ...options.Lister[options.UpdateOneOptions]) (*UpdateResult, error) {
+func (m *mongoCollection) UpdateOne(ctx context.Context, filter, update any, opts ...options.Lister[options.UpdateOneOptions]) (*UpdateResult, error) {
 	r, err := m.coll.UpdateOne(ctx, filter, update, opts...)
 	return &UpdateResult{
 		MatchedCount:  r.MatchedCount,
