@@ -20,7 +20,7 @@ type MockCollection struct {
 	next       bool
 }
 
-func (mm *MockCollection) InsertOne(ctx context.Context, document interface{}, opts ...options.Lister[options.InsertOneOptions]) (m.InsertOneResult, error) {
+func (mm *MockCollection) InsertOne(ctx context.Context, document interface{}, opts ...options.Lister[options.InsertOneOptions]) (*m.InsertOneResult, error) {
 	document.(*User).ID = mm.InsertedID
 
 	mockRetunrn := m.InsertOneResult{
@@ -28,14 +28,14 @@ func (mm *MockCollection) InsertOne(ctx context.Context, document interface{}, o
 		Acknowledged: true,
 	}
 
-	return mockRetunrn, mm.Err
+	return &mockRetunrn, mm.Err
 }
 
 func (m *MockCollection) FindOne(ctx context.Context, filter interface{}, opts ...options.Lister[options.FindOneOptions]) m.SingleResult {
 	return mongo.NewSingleResultFromDocument(m.User, m.Err, m.registry)
 }
 
-func (mm *MockCollection) UpdateOne(ctx context.Context, filter, update interface{}, opts ...options.Lister[options.UpdateOneOptions]) (m.UpdateResult, error) {
+func (mm *MockCollection) UpdateOne(ctx context.Context, filter, update interface{}, opts ...options.Lister[options.UpdateOneOptions]) (*m.UpdateResult, error) {
 	mockRetunrn := m.UpdateResult{
 		MatchedCount:  1,
 		ModifiedCount: 1,
@@ -43,7 +43,20 @@ func (mm *MockCollection) UpdateOne(ctx context.Context, filter, update interfac
 		UpsertedID:    nil,
 	}
 
-	return mockRetunrn, mm.Err
+	return &mockRetunrn, mm.Err
+}
+
+func (mm *MockCollection) DeleteOne(ctx context.Context, filter interface{}, opts ...options.Lister[options.DeleteOneOptions]) (*m.DeleteResult, error) {
+	mockRetunrn := m.DeleteResult{
+		DeletedCount: 1,
+		Acknowledged: true,
+	}
+
+	return &mockRetunrn, mm.Err
+}
+
+func (mm *MockCollection) CountDocuments(ctx context.Context, filter interface{}, opts ...options.Lister[options.CountOptions]) (int64, error) {
+	return 1, mm.Err
 }
 
 type mockCursor struct {
