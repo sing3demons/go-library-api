@@ -35,6 +35,17 @@ func (m *MockCollection) FindOne(ctx context.Context, filter interface{}, opts .
 	return mongo.NewSingleResultFromDocument(m.User, m.Err, m.registry)
 }
 
+func (mm *MockCollection) UpdateOne(ctx context.Context, filter, update interface{}, opts ...options.Lister[options.UpdateOneOptions]) (m.UpdateResult, error) {
+	mockRetunrn := m.UpdateResult{
+		MatchedCount:  1,
+		ModifiedCount: 1,
+		UpsertedCount: 0,
+		UpsertedID:    nil,
+	}
+
+	return mockRetunrn, mm.Err
+}
+
 type mockCursor struct {
 	c   m.Cursor
 	Err error
@@ -97,7 +108,6 @@ func TestSave(t *testing.T) {
 			InsertedID: mockID,
 			Err:        nil,
 		}
-
 		repo := NewMongoUserRepository(&mockCol)
 
 		user := &User{
@@ -116,7 +126,6 @@ func TestSave(t *testing.T) {
 			InsertedID: "",
 			Err:        mongo.ErrClientDisconnected,
 		}
-
 		repo := NewMongoUserRepository(&mockCol)
 
 		user := &User{
@@ -138,12 +147,10 @@ func TestGetByID(t *testing.T) {
 		Email: mockEmail,
 	}
 	t.Run("success", func(t *testing.T) {
-
 		mockCol := MockCollection{
 			Err:  nil,
 			User: &user,
 		}
-
 		repo := NewMongoUserRepository(&mockCol)
 
 		result, err := repo.GetByID(context.TODO(), mockCol.InsertedID)
@@ -159,7 +166,6 @@ func TestGetByID(t *testing.T) {
 			Err:  mongo.ErrClientDisconnected,
 			User: nil,
 		}
-
 		repo := NewMongoUserRepository(&mockCol)
 
 		result, err := repo.GetByID(context.TODO(), mockCol.InsertedID)
@@ -182,7 +188,6 @@ func TestGetAll(t *testing.T) {
 			Err:   nil,
 			Users: users,
 		}
-
 		repo := NewMongoUserRepository(&mockCol)
 
 		result, err := repo.GetALL(context.TODO(), bson.M{
@@ -199,7 +204,6 @@ func TestGetAll(t *testing.T) {
 			Err:   mongo.ErrNilCursor,
 			Users: nil,
 		}
-
 		repo := NewMongoUserRepository(&mockCol)
 
 		result, err := repo.GetALL(context.TODO(), bson.M{})
@@ -214,7 +218,6 @@ func TestGetAll(t *testing.T) {
 			Users: users,
 			next:  true,
 		}
-
 		repo := NewMongoUserRepository(&mockCol)
 
 		result, err := repo.GetALL(context.TODO(), bson.M{})

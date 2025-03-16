@@ -36,7 +36,7 @@ type Collection interface {
 	// DeleteOne(ctx context.Context, filter interface{}, opts ...options.Lister[options.DeleteOneOptions]) (*DeleteResult, error)
 	Find(context.Context, interface{}, ...options.Lister[options.FindOptions]) (Cursor, error)
 	// CountDocuments(context.Context, interface{}, ...options.Lister[options.CountOptions]) (int64, error)
-	// UpdateOne(ctx context.Context, filter, update interface{}, opts ...options.Lister[options.UpdateOneOptions]) (*UpdateResult, error)
+	UpdateOne(ctx context.Context, filter, update interface{}, opts ...options.Lister[options.UpdateOneOptions]) (UpdateResult, error)
 }
 
 type Database interface {
@@ -178,9 +178,9 @@ func (m *mongoCollection) FindOne(ctx context.Context, filter interface{}, opts 
 	}
 }
 
-func (m *mongoCollection) UpdateOne(ctx context.Context, filter, update interface{}, opts ...options.Lister[options.UpdateOneOptions]) (*UpdateResult, error) {
+func (m *mongoCollection) UpdateOne(ctx context.Context, filter, update interface{}, opts ...options.Lister[options.UpdateOneOptions]) (UpdateResult, error) {
 	r, err := m.coll.UpdateOne(ctx, filter, update, opts...)
-	return &UpdateResult{
+	return UpdateResult{
 		MatchedCount:  r.MatchedCount,
 		ModifiedCount: r.ModifiedCount,
 		UpsertedCount: r.UpsertedCount,
