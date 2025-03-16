@@ -28,7 +28,7 @@ type InsertOneResult struct {
 type Collection interface {
 	FindOne(ctx context.Context, filter any, opts ...options.Lister[options.FindOneOptions]) SingleResult
 	InsertOne(ctx context.Context, document any, opts ...options.Lister[options.InsertOneOptions]) (*InsertOneResult, error)
-	// InsertMany(context.Context, []interface{}) ([]interface{}, error)
+	InsertMany(ctx context.Context, documents interface{}, opts ...options.Lister[options.InsertManyOptions]) (*InsertManyResult, error)
 	DeleteOne(ctx context.Context, filter any, opts ...options.Lister[options.DeleteOneOptions]) (*DeleteResult, error)
 	Find(context.Context, any, ...options.Lister[options.FindOptions]) (Cursor, error)
 	CountDocuments(context.Context, any, ...options.Lister[options.CountOptions]) (int64, error)
@@ -178,5 +178,18 @@ func (m *mongoCollection) UpdateOne(ctx context.Context, filter, update any, opt
 		ModifiedCount: r.ModifiedCount,
 		UpsertedCount: r.UpsertedCount,
 		UpsertedID:    r.UpsertedID,
+	}, err
+}
+
+type InsertManyResult struct {
+	InsertedIDs  []interface{}
+	Acknowledged bool
+}
+
+func (m *mongoCollection) InsertMany(ctx context.Context, documents interface{}, opts ...options.Lister[options.InsertManyOptions]) (*InsertManyResult, error) {
+	result, err := m.coll.InsertMany(ctx, documents, opts...)
+	return &InsertManyResult{
+		InsertedIDs:  result.InsertedIDs,
+		Acknowledged: result.Acknowledged,
 	}, err
 }

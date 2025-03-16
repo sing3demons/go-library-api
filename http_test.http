@@ -4,7 +4,16 @@
 GET {{uri}}/books HTTP/1.1
 
 ### Get book by id
-GET {{uri}}/books/1 HTTP/1.1
+GET {{uri}}/books/dd3c3286-bc57-481b-9f77-9de7720dc595 HTTP/1.1
+
+### Create a book
+POST {{uri}}/books HTTP/1.1
+Content-Type: application/json
+
+{
+  "title": "The Hobbit",
+  "author": "J.R.R. Tolkien"
+}
 
 ### Create a user
 POST {{uri}}/users/register HTTP/1.1

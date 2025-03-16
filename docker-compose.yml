@@ -8,9 +8,16 @@ services:
     ports:
       - "27017:27017"
     command: mongod
+    # volumes:
+    #   - mongo-data:/data/db
+  postgres:
+    image: postgres:16.0
+    environment:
+      POSTGRES_DB: product_master
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: password
     volumes:
-      - mongo-data:/data/db
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
 
-volumes:
-  mongo-data:
-    driver: local

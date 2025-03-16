@@ -4,21 +4,23 @@ import (
 	"log"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/sing3demons/go-library-api/internal/books"
 	"github.com/sing3demons/go-library-api/internal/users"
 	"github.com/sing3demons/go-library-api/pkg/mongo"
+	"github.com/sing3demons/go-library-api/pkg/postgres"
 )
 
 func main() {
 
-	// client, err := mongo.Connect(
-	// 	options.Client().ApplyURI("mongodb://localhost:27017/daov2"),
-	// )
+	p, err := postgres.New()
+	if err != nil {
+		panic(err)
+	}
 
-	// if err != nil {
-	// 	panic(err)
-	// }
+	// p.Db.Exec("INSERT INTO books (title, author) VALUES ($1, $2)", "The Hobbit", "J.R.R. Tolkien")
+	// p.Db.Exec("INSERT INTO books (title, author) VALUES ($1, $2)", "The Catcher in the Rye", "J.D. Salinger")
 
-	// defer client.Disconnect(context.Background())
+	defer p.Db.Close()
 
 	client := mongo.NewMongo("mongodb://localhost:27017")
 
@@ -28,11 +30,11 @@ func main() {
 
 	app := fiber.New()
 
-	// // Books module
-	// bookRepo := books.NewInMemoryBookRepository()
-	// bookSvc := books.NewBookService(bookRepo)
-	// bookHandler := books.NewBookHandler(bookSvc)
-	// bookHandler.RegisterRoutes(app)
+	// Books module
+	bookRepo := books.NewMongoBookRepository(p)
+	bookSvc := books.NewBookService(bookRepo)
+	bookHandler := books.NewBookHandler(bookSvc)
+	bookHandler.RegisterRoutes(app)
 
 	// Users module
 	userRepo := users.NewMongoUserRepository(collection)

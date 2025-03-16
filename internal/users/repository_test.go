@@ -109,6 +109,13 @@ func (m *MockCollection) Find(ctx context.Context, filter any, opts ...options.L
 	return mockCursor, err
 }
 
+func (mm *MockCollection) InsertMany(ctx context.Context, documents interface{}, opts ...options.Lister[options.InsertManyOptions]) (*m.InsertManyResult, error) {
+	return &m.InsertManyResult{
+		InsertedIDs:  []interface{}{mm.InsertedID},
+		Acknowledged: true,
+	}, mm.Err
+}
+
 const (
 	mockID    = "f676b9ee-d08d-4758-b016-6c566e8fb573"
 	mockName  = "test"
