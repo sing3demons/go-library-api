@@ -35,7 +35,7 @@ func (r *MongoBookRepository) Save(ctx context.Context, book *Book) error {
 
 func (r *MongoBookRepository) GetByID(ctx context.Context, id string) (*Book, error) {
 	var book Book
-	err := r.Db.QueryRowContext(ctx, "SELECT * FROM books WHERE id = $1", id).Scan(&book.ID, &book.Title, &book.Author)
+	err := r.Db.QueryRowContext(ctx, "SELECT id, title, author FROM books WHERE id = $1", id).Scan(&book.ID, &book.Title, &book.Author)
 	if err != nil {
 		return nil, err
 	}
