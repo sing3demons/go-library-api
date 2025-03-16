@@ -39,7 +39,7 @@ func (h *BookHandler) CreateBook(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
-	return c.Status(fiber.StatusCreated).JSON(fiber.Map{"message": "book created"})
+	return c.Status(fiber.StatusCreated).JSON(fiber.Map{"message": "book created", "id": req.ID})
 }
 
 func (h *BookHandler) GetAllBooks(c *fiber.Ctx) error {

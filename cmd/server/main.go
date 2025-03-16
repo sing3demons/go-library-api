@@ -20,7 +20,7 @@ func main() {
 	// p.Db.Exec("INSERT INTO books (title, author) VALUES ($1, $2)", "The Hobbit", "J.R.R. Tolkien")
 	// p.Db.Exec("INSERT INTO books (title, author) VALUES ($1, $2)", "The Catcher in the Rye", "J.D. Salinger")
 
-	defer p.Db.Close()
+	defer p.Close()
 
 	client := mongo.NewMongo("mongodb://localhost:27017")
 
@@ -31,7 +31,7 @@ func main() {
 	app := fiber.New()
 
 	// Books module
-	bookRepo := books.NewMongoBookRepository(p)
+	bookRepo := books.NewPostgresBookRepository(p)
 	bookSvc := books.NewBookService(bookRepo)
 	bookHandler := books.NewBookHandler(bookSvc)
 	bookHandler.RegisterRoutes(app)

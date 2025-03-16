@@ -14,16 +14,16 @@ type BookRepository interface {
 }
 
 type MongoBookRepository struct {
-	Db *postgres.Postgres
+	Db postgres.DB
 }
 
-func NewMongoBookRepository(db *postgres.Postgres) *MongoBookRepository {
+func NewPostgresBookRepository(db postgres.DB) *MongoBookRepository {
 	return &MongoBookRepository{Db: db}
 }
 
 func (r *MongoBookRepository) Save(ctx context.Context, book *Book) error {
 	var lastInsertId string
-	err := r.Db.Db.QueryRowContext(ctx, "INSERT INTO books (title, author) VALUES ($1, $2) RETURNING id", book.Title, book.Author).Scan(&lastInsertId)
+	err := r.Db.QueryRowContext(ctx, "INSERT INTO books (title, author) VALUES ($1, $2) RETURNING id", book.Title, book.Author).Scan(&lastInsertId)
 	if err != nil {
 		return err
 	}
@@ -35,7 +35,7 @@ func (r *MongoBookRepository) Save(ctx context.Context, book *Book) error {
 
 func (r *MongoBookRepository) GetByID(ctx context.Context, id string) (*Book, error) {
 	var book Book
-	err := r.Db.Db.QueryRowContext(ctx, "SELECT id, title, author FROM books WHERE id = $1", id).Scan(&book.ID, &book.Title, &book.Author)
+	err := r.Db.QueryRowContext(ctx, "SELECT id, title, author FROM books WHERE id = $1", id).Scan(&book.ID, &book.Title, &book.Author)
 	if err != nil {
 		return nil, err
 	}
@@ -49,7 +49,7 @@ func (r *MongoBookRepository) href(id string) string {
 
 func (r *MongoBookRepository) GetALL(ctx context.Context, filter map[string]interface{}) ([]*Book, error) {
 	var books []*Book
-	rows, err := r.Db.Db.QueryContext(ctx, "SELECT id, title, author FROM books")
+	rows, err := r.Db.QueryContext(ctx, "SELECT id, title, author FROM books")
 	if err != nil {
 		return nil, err
 	}
@@ -63,24 +63,4 @@ func (r *MongoBookRepository) GetALL(ctx context.Context, filter map[string]inte
 		books = append(books, &book)
 	}
 	return books, nil
-}
-
-type InMemoryBookRepository struct {
-	books map[string]*Book
-}
-
-func NewInMemoryBookRepository() *InMemoryBookRepository {
-	return &InMemoryBookRepository{
-		books: map[string]*Book{
-			"1": {ID: "1", Title: "The Go Programming Language", Author: "Donovan"},
-		},
-	}
-}
-
-func (r *InMemoryBookRepository) GetByID(ctx context.Context, id string) (*Book, error) {
-	book, exists := r.books[id]
-	if !exists {
-		return nil, nil // Simulate "not found"
-	}
-	return book, nil
 }
