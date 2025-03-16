@@ -11,7 +11,6 @@ import (
 )
 
 func main() {
-
 	p, err := postgres.New()
 	if err != nil {
 		panic(err)

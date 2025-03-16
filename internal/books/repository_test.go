@@ -4,6 +4,9 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
+	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/sing3demons/go-library-api/pkg/postgres"
@@ -31,7 +34,9 @@ func (m *MockDB) QueryRowContext(ctx context.Context, query string, args ...any)
 				Title:  m.book.Title,
 				Author: m.book.Author,
 			},
-		}}
+		},
+			query: m.query,
+		}
 	}
 
 	return &MockRow{Values: []Book{{ID: m.ExpectedID}}}
@@ -40,6 +45,7 @@ func (m *MockDB) QueryRowContext(ctx context.Context, query string, args ...any)
 type MockRow struct {
 	Values []Book
 	err    error
+	query  string
 }
 
 func (r *MockRow) Scan(dest ...any) error {
@@ -48,7 +54,25 @@ func (r *MockRow) Scan(dest ...any) error {
 	}
 
 	if len(dest) > 0 {
-		if len(r.Values) > 0 {
+		if len(r.Values) == 1 {
+			columns, _ := extractColumnsFromQuery(r.query)
+
+			if len(dest) != len(columns) {
+				book := r.Values[0]
+				switch d := dest[0].(type) {
+				case *string:
+					*d = book.ID
+				default:
+					return errors.New("unsupported type for Scan")
+				}
+				r.Values = r.Values[1:]
+				return nil
+			}
+
+			scan(columns, r.Values[0], dest...)
+			return nil
+
+		} else if len(r.Values) > 0 {
 			book := r.Values[0]
 			switch d := dest[0].(type) {
 			case *string:
@@ -136,9 +160,72 @@ func (m *MockDB) Close() error {
 }
 
 var book = Book{
-	ID:    "123",
+	ID:     "123",
 	Title:  "Test Book",
 	Author: "Test Author",
+}
+
+func extractColumnsFromQuery(query string) ([]string, error) {
+	// Trim spaces and convert the query to lowercase
+	query = strings.TrimSpace(query)
+	queryLower := strings.ToLower(query)
+
+	// Validate if the query starts with "select"
+	if !strings.HasPrefix(queryLower, "select") {
+		return nil, fmt.Errorf("invalid query: must start with SELECT")
+	}
+
+	// Find the position of "FROM" to limit the extraction of columns before it
+	fromIndex := strings.Index(queryLower, "from")
+	if fromIndex == -1 {
+		return nil, fmt.Errorf("invalid query: missing FROM clause")
+	}
+
+	// Extract the part of the query between "SELECT" and "FROM"
+	columnsPart := query[6:fromIndex]
+	columnsPart = strings.TrimSpace(columnsPart)
+
+	// Split the columns by commas
+	columns := strings.Split(columnsPart, ",")
+	var result []string
+
+	// Clean up each column name by trimming spaces
+	for _, column := range columns {
+		column = strings.TrimSpace(column)
+		result = append(result, column)
+	}
+
+	return result, nil
+}
+
+func scan(columns []string, data Book, dest ...interface{}) error {
+
+	if len(dest) != len(columns) {
+		return fmt.Errorf("number of columns does not match number of fields")
+	}
+
+	reflectValue := reflect.ValueOf(&data)
+	fieldMap := make(map[string]reflect.Value)
+
+	for i := 0; i < reflectValue.Elem().NumField(); i++ {
+		field := reflectValue.Elem().Type().Field(i)
+		fieldMap[strings.ToUpper(field.Name)] = reflectValue.Elem().Field(i)
+	}
+
+	for i, column := range columns {
+		normalizedColumn := strings.ToUpper(column)
+
+		if field, found := fieldMap[normalizedColumn]; found {
+			reflect.ValueOf(dest[i]).Elem().Set(field)
+		} else {
+			fmt.Printf("No field found for column: %s\n", column)
+		}
+	}
+
+	// Optional: Print extracted columns for debugging
+	fmt.Println("Extracted columns:", columns)
+
+	return nil
 }
 
 func TestSave(t *testing.T) {
@@ -172,6 +259,7 @@ func TestGetByID(t *testing.T) {
 			ExpectedID: "123",
 			ShouldFail: false,
 			book:       &book,
+			query:      "SELECT id, title, author FROM books WHERE id = $1",
 		}
 		repo := NewPostgresBookRepository(mockDB)
 
