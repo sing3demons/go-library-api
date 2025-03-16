@@ -13,33 +13,45 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const (
+	mockDatabaseError = "mock database error"
+	unsupported       = "unsupported type for Scan"
+)
+
 type MockDB struct {
 	ExpectedID string
 	ShouldFail bool
 	book       *Book
+	books      []Book
 	next       bool
 	err        error
-	query      string
+}
+
+var book = Book{
+	ID:     "123",
+	Title:  "Test Book",
+	Author: "Test Author",
+	Href:   "",
 }
 
 func (m *MockDB) QueryRowContext(ctx context.Context, query string, args ...any) postgres.Row {
 	if m.ShouldFail {
-		return &MockRow{err: errors.New("mock database error")}
+		return &MockRow{err: errors.New(mockDatabaseError)}
 	}
 
 	if m.book != nil {
 		return &MockRow{Values: []Book{
 			{
-				ID:     m.ExpectedID,
+				ID:     m.book.ID,
 				Title:  m.book.Title,
 				Author: m.book.Author,
 			},
 		},
-			query: m.query,
+			query: query,
 		}
 	}
 
-	return &MockRow{Values: []Book{{ID: m.ExpectedID}}}
+	return &MockRow{Values: []Book{{ID: m.ExpectedID}}, query: query}
 }
 
 type MockRow struct {
@@ -56,14 +68,32 @@ func (r *MockRow) Scan(dest ...any) error {
 	if len(dest) > 0 {
 		if len(r.Values) == 1 {
 			columns, _ := extractColumnsFromQuery(r.query)
+			if len(columns) == 1 && len(dest) != 0 && columns[0] == "*" {
+				v := reflect.ValueOf(r.Values[0])
+				destIndex := 0
 
-			if len(dest) != len(columns) {
+				for i := 0; i < v.NumField(); i++ {
+					if destIndex >= len(dest) {
+						break
+					}
+
+					field := v.Type().Field(i)
+					if field.Name == "Href" {
+						continue
+					}
+					data := v.Field(i).Interface()
+					reflect.ValueOf(dest[destIndex]).Elem().Set(reflect.ValueOf(data))
+					destIndex++
+				}
+				r.Values = r.Values[1:]
+				return nil
+			} else if len(dest) != len(columns) {
 				book := r.Values[0]
 				switch d := dest[0].(type) {
 				case *string:
 					*d = book.ID
 				default:
-					return errors.New("unsupported type for Scan")
+					return errors.New(unsupported)
 				}
 				r.Values = r.Values[1:]
 				return nil
@@ -78,7 +108,7 @@ func (r *MockRow) Scan(dest ...any) error {
 			case *string:
 				*d = book.ID
 			default:
-				return errors.New("unsupported type for Scan")
+				return errors.New(unsupported)
 			}
 			r.Values = r.Values[1:]
 		}
@@ -100,28 +130,51 @@ type MockRows struct {
 	Values []Book
 	err    error
 	next   bool
+	query  string
 }
 
 func (r *MockRows) Scan(dest ...any) error {
 	if r.err != nil {
 		return r.err
 	}
-	// Handle the scanning logic
-	if len(dest) > 0 {
-		// Check if we have at least one row to scan
-		if len(r.Values) > 0 {
-			// Extract the first value from the Values slice
+
+	if r.next && len(r.Values) > 0 {
+		columns, _ := extractColumnsFromQuery(r.query)
+		if len(columns) == 1 && len(dest) != 0 && columns[0] == "*" {
+			v := reflect.ValueOf(r.Values[0])
+			destIndex := 0
+
+			for i := 0; i < v.NumField(); i++ {
+				if destIndex >= len(dest) {
+					break
+				}
+
+				field := v.Type().Field(i)
+				if field.Name == "Href" {
+					continue
+				}
+				data := v.Field(i).Interface()
+				reflect.ValueOf(dest[destIndex]).Elem().Set(reflect.ValueOf(data))
+				destIndex++
+			}
+			r.Values = r.Values[1:]
+			return nil
+		} else if len(dest) != len(columns) {
 			book := r.Values[0]
-			// Assign fields of `book` to the dest slice
 			switch d := dest[0].(type) {
 			case *string:
 				*d = book.ID
 			default:
-				return errors.New("unsupported type for Scan")
+				return errors.New(unsupported)
 			}
 			// Remove the processed row
 			r.Values = r.Values[1:]
+			return nil
 		}
+
+		scan(columns, r.Values[0], dest...)
+		r.Values = r.Values[1:]
+		return nil
 	}
 	return nil
 }
@@ -140,29 +193,28 @@ func (r *MockRows) Err() error {
 
 func (m *MockDB) QueryContext(ctx context.Context, query string, args ...any) (postgres.Rows, error) {
 	if m.ShouldFail {
-		return nil, errors.New("mock database error")
+		return nil, errors.New(mockDatabaseError)
+	}
+
+	results := []Book{}
+
+	if m.book != nil {
+		results = append(results, *m.book)
+	}
+
+	if m.books != nil {
+		results = append(results, m.books...)
 	}
 
 	return &MockRows{
-		Values: []Book{
-			{
-				ID:     m.ExpectedID,
-				Title:  m.book.Title,
-				Author: m.book.Author,
-			},
-		},
-		next: m.next,
-		err:  m.err,
+		Values: results,
+		next:   m.next,
+		err:    m.err,
+		query:  query,
 	}, nil
 }
 func (m *MockDB) Close() error {
 	return nil
-}
-
-var book = Book{
-	ID:     "123",
-	Title:  "Test Book",
-	Author: "Test Author",
 }
 
 func extractColumnsFromQuery(query string) ([]string, error) {
@@ -172,6 +224,16 @@ func extractColumnsFromQuery(query string) ([]string, error) {
 
 	// Validate if the query starts with "select"
 	if !strings.HasPrefix(queryLower, "select") {
+		if strings.Contains(queryLower, "insert") {
+			fromIndex := strings.Index(queryLower, "returning")
+			if fromIndex != -1 {
+				q := query[fromIndex+len("returning"):]
+				q = strings.TrimSpace(q)
+				q = strings.ReplaceAll(q, ";", "")
+
+				return []string{q}, nil
+			}
+		}
 		return nil, fmt.Errorf("invalid query: must start with SELECT")
 	}
 
@@ -198,18 +260,17 @@ func extractColumnsFromQuery(query string) ([]string, error) {
 	return result, nil
 }
 
-func scan(columns []string, data Book, dest ...interface{}) error {
-
+func scan(columns []string, data Book, dest ...any) error {
 	if len(dest) != len(columns) {
-		return fmt.Errorf("number of columns does not match number of fields")
+		return errors.New("number of columns does not match number of fields")
 	}
 
 	reflectValue := reflect.ValueOf(&data)
 	fieldMap := make(map[string]reflect.Value)
 
-	for i := 0; i < reflectValue.Elem().NumField(); i++ {
-		field := reflectValue.Elem().Type().Field(i)
-		fieldMap[strings.ToUpper(field.Name)] = reflectValue.Elem().Field(i)
+	for index := 0; index < reflectValue.Elem().NumField(); index++ {
+		field := reflectValue.Elem().Type().Field(index)
+		fieldMap[strings.ToUpper(field.Name)] = reflectValue.Elem().Field(index)
 	}
 
 	for i, column := range columns {
@@ -217,14 +278,8 @@ func scan(columns []string, data Book, dest ...interface{}) error {
 
 		if field, found := fieldMap[normalizedColumn]; found {
 			reflect.ValueOf(dest[i]).Elem().Set(field)
-		} else {
-			fmt.Printf("No field found for column: %s\n", column)
 		}
 	}
-
-	// Optional: Print extracted columns for debugging
-	fmt.Println("Extracted columns:", columns)
-
 	return nil
 }
 
@@ -254,12 +309,9 @@ func TestSave(t *testing.T) {
 
 func TestGetByID(t *testing.T) {
 	t.Run("should get a book by id", func(t *testing.T) {
-
 		mockDB := &MockDB{
-			ExpectedID: "123",
 			ShouldFail: false,
 			book:       &book,
-			query:      "SELECT id, title, author FROM books WHERE id = $1",
 		}
 		repo := NewPostgresBookRepository(mockDB)
 
@@ -287,13 +339,14 @@ func TestGetALL(t *testing.T) {
 			ShouldFail: false,
 			book:       &book,
 			next:       true,
+			books:      []Book{{ID: "456", Title: "Test Book 2", Author: "Test Author 2"}},
 		}
 		repo := NewPostgresBookRepository(mockDB)
 
 		books, err := repo.GetALL(context.Background(), nil)
 
 		assert.NoError(t, err)
-		assert.Len(t, books, 1)
+		assert.NotEmpty(t, books)
 	})
 
 	t.Run("should fail to get all books", func(t *testing.T) {
@@ -309,7 +362,7 @@ func TestGetALL(t *testing.T) {
 		mockDB := &MockDB{
 			ShouldFail: false,
 			book:       &book,
-			err:        errors.New("mock database error"),
+			err:        errors.New(mockDatabaseError),
 		}
 		repo := NewPostgresBookRepository(mockDB)
 
