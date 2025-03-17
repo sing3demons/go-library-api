@@ -29,6 +29,7 @@ type DB interface {
 
 	GetBookByID(id string) (entities.ProcessData[entities.Book], error)
 	GetAllBooks(filter map[string]any) (result entities.ProcessData[[]entities.Book], err error)
+	CreateBook(book entities.Book) (entities.ProcessData[entities.Book], error)
 }
 
 type Postgres struct {

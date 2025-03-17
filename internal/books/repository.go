@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/sing3demons/go-library-api/pkg/entities"
 	"github.com/sing3demons/go-library-api/pkg/postgres"
 )
 
@@ -22,13 +23,24 @@ func NewPostgresBookRepository(db postgres.DB) *MongoBookRepository {
 }
 
 func (r *MongoBookRepository) Save(ctx context.Context, book *Book) error {
-	var lastInsertId string
-	err := r.Db.QueryRowContext(ctx, "INSERT INTO books (title, author) VALUES ($1, $2) RETURNING id", book.Title, book.Author).Scan(&lastInsertId)
+	// var lastInsertId string
+	// err := r.Db.QueryRowContext(ctx, "INSERT INTO books (title, author) VALUES ($1, $2) RETURNING id", book.Title, book.Author).Scan(&lastInsertId)
+	// if err != nil {
+	// 	return err
+	// }
+
+	// book.ID = lastInsertId
+
+	result, err := r.Db.CreateBook(entities.Book{
+		Title:  book.Title,
+		Author: book.Author,
+	})
 	if err != nil {
 		return err
 	}
 
-	book.ID = lastInsertId
+	fmt.Println("raw: ", result.RawData)
+	book.ID = result.Data.ID
 	book.Href = r.href(book.ID)
 	return nil
 }

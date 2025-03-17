@@ -35,6 +35,36 @@ var book = Book{
 	Href:   "",
 }
 
+func (m *MockDB) CreateBook(book entities.Book) (entities.ProcessData[entities.Book], error) {
+	var result entities.ProcessData[entities.Book]
+
+	result.Body.Collection = "books"
+	result.Body.Table = "books"
+	result.Body.Method = "POST"
+	result.Body.Document = book
+	result.RawData = fmt.Sprintf("INSERT INTO books (title, author) VALUES (%s, %s)", book.Title, book.Author)
+
+	if m.ShouldFail {
+		return result, errors.New(mockDatabaseError)
+	}
+
+	if m.err != nil {
+		return result, m.err
+	}
+
+	book.ID = m.ExpectedID
+	if book.Title != "" {
+		result.Data.Title = book.Title
+	}
+	if book.Author != "" {
+		result.Data.Author = book.Author
+	}
+
+	result.Data.ID = m.ExpectedID
+
+	return result, nil
+}
+
 func (m *MockDB) GetAllBooks(filter map[string]any) (result entities.ProcessData[[]entities.Book], err error) {
 	result.Body.Collection = "books"
 	result.Body.Table = "books"

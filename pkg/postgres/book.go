@@ -42,7 +42,6 @@ func (p *Postgres) GetAllBooks(filter map[string]any) (result entities.ProcessDa
 	var keys []string
 	var values []any
 
-	result.Body.Collection = "books"
 	result.Body.Table = "books"
 
 	index := 1
@@ -65,10 +64,7 @@ func (p *Postgres) GetAllBooks(filter map[string]any) (result entities.ProcessDa
 		for i := 1; i <= len(values); i++ {
 			rawData = strings.Replace(rawData, fmt.Sprintf("$%d", i), fmt.Sprintf("%v", values[i-1]), 1)
 		}
-
 	}
-
-	fmt.Println("query: ", query)
 
 	result.RawData = rawData
 
@@ -89,5 +85,25 @@ func (p *Postgres) GetAllBooks(filter map[string]any) (result entities.ProcessDa
 		books = append(books, b)
 	}
 	result.Data = books
+	return result, nil
+}
+
+func (p *Postgres) CreateBook(book entities.Book) (entities.ProcessData[entities.Book], error) {
+	query := "INSERT INTO books (title, author) VALUES ($1, $2) RETURNING id"
+
+	var result entities.ProcessData[entities.Book]
+	result.RawData = query
+
+	result.Body.Table = "books"
+
+	result.RawData = strings.Replace(result.RawData, "$1", book.Title, 1)
+	result.RawData = strings.Replace(result.RawData, "$2", book.Author, 1)
+
+	err := p.DB.QueryRow(query, book.Title, book.Author).Scan(&book.ID)
+	if err != nil {
+		return result, err
+	}
+
+	result.Data = book
 	return result, nil
 }
