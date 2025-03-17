@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/sing3demons/go-library-api/pkg/entities"
 	"github.com/sing3demons/go-library-api/pkg/postgres"
 	"github.com/stretchr/testify/assert"
 )
@@ -32,6 +33,61 @@ var book = Book{
 	Title:  "Test Book",
 	Author: "Test Author",
 	Href:   "",
+}
+
+func (m *MockDB) GetAllBooks(filter map[string]any) (result entities.ProcessData[[]entities.Book], err error) {
+	result.Body.Collection = "books"
+	result.Body.Table = "books"
+	result.Body.Query = filter
+	result.RawData = "SELECT id, title, author FROM books"
+	if m.ShouldFail {
+		return result, errors.New(mockDatabaseError)
+	}
+
+	if m.err != nil {
+		return result, m.err
+	}
+
+	if m.book != nil {
+		result.Data = append(result.Data, entities.Book{
+			ID:     m.book.ID,
+			Title:  m.book.Title,
+			Author: m.book.Author,
+		})
+	}
+
+	if m.books != nil {
+		for _, book := range m.books {
+			result.Data = append(result.Data, entities.Book{
+				ID:     book.ID,
+				Title:  book.Title,
+				Author: book.Author,
+			})
+		}
+	}
+
+	return result, nil
+}
+
+func (m *MockDB) GetBookByID(id string) (entities.ProcessData[entities.Book], error) {
+	var result entities.ProcessData[entities.Book]
+
+	result.Body.Collection = "books"
+	result.Body.Table = "books"
+	result.Body.Query = map[string]string{"id": id}
+	result.RawData = fmt.Sprintf("SELECT id, title, author FROM books WHERE id = %s", id)
+
+	if m.ShouldFail {
+		return result, errors.New(mockDatabaseError)
+	}
+
+	if m.book != nil {
+		result.Data.ID = m.book.ID
+		result.Data.Title = m.book.Title
+		result.Data.Author = m.book.Author
+	}
+
+	return result, nil
 }
 
 func (m *MockDB) QueryRowContext(ctx context.Context, query string, args ...any) postgres.Row {
@@ -358,6 +414,7 @@ func TestGetALL(t *testing.T) {
 		assert.Error(t, err)
 		assert.Nil(t, books)
 	})
+
 	t.Run("should error scan", func(t *testing.T) {
 		mockDB := &MockDB{
 			ShouldFail: false,

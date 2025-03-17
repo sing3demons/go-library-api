@@ -43,7 +43,17 @@ func (h *BookHandler) CreateBook(c *fiber.Ctx) error {
 }
 
 func (h *BookHandler) GetAllBooks(c *fiber.Ctx) error {
-	books, err := h.svc.GetAllBooks(c.Context())
+	filter := map[string]any{}
+
+	if c.Query("id") != "" {
+		filter["id"] = c.Query("id")
+	}
+
+	if c.Query("title") != "" {
+		filter["title"] = c.Query("title")
+	}
+
+	books, err := h.svc.GetAllBooks(c.Context(), filter)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}

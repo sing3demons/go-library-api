@@ -7,6 +7,7 @@ import (
 	"log"
 
 	_ "github.com/lib/pq"
+	"github.com/sing3demons/go-library-api/pkg/entities"
 )
 
 type Row interface {
@@ -25,6 +26,9 @@ type DB interface {
 	QueryRowContext(ctx context.Context, query string, args ...interface{}) Row
 	QueryContext(ctx context.Context, query string, args ...any) (Rows, error)
 	Close() error
+
+	GetBookByID(id string) (entities.ProcessData[entities.Book], error)
+	GetAllBooks(filter map[string]any) (result entities.ProcessData[[]entities.Book], err error)
 }
 
 type Postgres struct {

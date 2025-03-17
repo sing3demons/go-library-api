@@ -5,7 +5,7 @@ import "context"
 type BookService interface {
 	GetBook(ctx context.Context, id string) (*Book, error)
 	CreateBook(ctx context.Context, book *Book) error
-    GetAllBooks(ctx context.Context) ([]*Book, error)
+	GetAllBooks(ctx context.Context, filter map[string]any) ([]*Book, error)
 }
 
 type bookService struct {
@@ -24,7 +24,6 @@ func (s *bookService) CreateBook(ctx context.Context, book *Book) error {
 	return s.repo.Save(ctx, book)
 }
 
-
-func (s *bookService) GetAllBooks(ctx context.Context) ([]*Book, error) {
-    return s.repo.GetALL(ctx, nil)
+func (s *bookService) GetAllBooks(ctx context.Context, filter map[string]any) ([]*Book, error) {
+	return s.repo.GetALL(ctx, filter)
 }
