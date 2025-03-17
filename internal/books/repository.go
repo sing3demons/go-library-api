@@ -10,7 +10,7 @@ import (
 
 type BookRepository interface {
 	GetByID(ctx context.Context, id string) (*Book, error)
-	GetALL(ctx context.Context, filter map[string]interface{}) ([]*Book, error)
+	GetALL(ctx context.Context, filter map[string]any) ([]*Book, error)
 	Save(ctx context.Context, book *Book) error
 }
 
