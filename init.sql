@@ -3,5 +3,7 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 CREATE TABLE IF NOT EXISTS books (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid (),
     title VARCHAR(250) NOT NULL,
-    author VARCHAR(250) NOT NULL
+    author VARCHAR(250) NOT NULL,
+    createdAt TIMESTAMPTZ DEFAULT NOW(),
+    updatedAt TIMESTAMPTZ DEFAULT NOW()
 );
