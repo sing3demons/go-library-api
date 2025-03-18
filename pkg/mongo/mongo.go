@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 
+	"github.com/sing3demons/go-library-api/pkg/entities"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
 	"go.mongodb.org/mongo-driver/v2/mongo/readpref"
@@ -33,6 +34,10 @@ type Collection interface {
 	Find(context.Context, any, ...options.Lister[options.FindOptions]) (Cursor, error)
 	CountDocuments(context.Context, any, ...options.Lister[options.CountOptions]) (int64, error)
 	UpdateOne(ctx context.Context, filter, update any, opts ...options.Lister[options.UpdateOneOptions]) (*UpdateResult, error)
+
+	GetUserByID(id string) (entities.ProcessData[entities.User], error)
+	GetAllUsers(filter map[string]any) (result entities.ProcessData[[]entities.User], err error)
+	CreateUser(user *entities.User) (entities.ProcessData[entities.User], error)
 }
 
 type Database interface {

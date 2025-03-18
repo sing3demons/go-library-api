@@ -2,8 +2,10 @@ package users
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
+	"github.com/sing3demons/go-library-api/pkg/entities"
 	m "github.com/sing3demons/go-library-api/pkg/mongo"
 	"github.com/stretchr/testify/assert"
 	"go.mongodb.org/mongo-driver/v2/bson"
@@ -114,6 +116,72 @@ func (mm *MockCollection) InsertMany(ctx context.Context, documents interface{},
 		InsertedIDs:  []interface{}{mm.InsertedID},
 		Acknowledged: true,
 	}, mm.Err
+}
+
+func (mm *MockCollection) CreateUser(user *entities.User) (entities.ProcessData[entities.User], error) {
+	user.ID = mm.InsertedID
+	result := entities.ProcessData[entities.User]{}
+
+	result.Body.Method = "InsertOne"
+	result.Body.Document = user
+	result.Body.Options = nil
+
+	result.Body.Collection = "users"
+
+	result.RawData = fmt.Sprintf("users.insertOne(%s, %s, %s)", user.ID, user.Name, user.Email)
+	result.Data.ID = mm.InsertedID
+
+	result.Data.Name = user.Name
+	result.Data.Email = user.Email
+
+	return result, mm.Err
+}
+
+func (mm *MockCollection) GetUserByID(id string) (entities.ProcessData[entities.User], error) {
+	result := entities.ProcessData[entities.User]{}
+
+	result.Body.Method = "FindOne"
+	result.Body.Document = nil
+	result.Body.Options = nil
+
+	result.Body.Collection = "users"
+
+	result.RawData = fmt.Sprintf("users.findOne({_id: %s})", id)
+
+	var user entities.User
+	err := mm.FindOne(context.Background(), bson.M{"_id": id}).Decode(&user)
+	if err != nil {
+		return result, err
+	}
+
+	result.Data = user
+	return result, nil
+}
+
+func (mm *MockCollection) GetAllUsers(filter map[string]any) (result entities.ProcessData[[]entities.User], err error) {
+	result.Body.Method = "Find"
+	result.Body.Document = nil
+	result.Body.Options = nil
+
+	result.Body.Collection = "users"
+
+	if mm.Err != nil {
+		return result, mm.Err
+	}
+
+	if mm.next {
+		return result, mm.Err
+	}
+
+	for _, user := range mm.Users {
+		result.Data = append(result.Data, entities.User{
+			ID:    user.ID,
+			Name:  user.Name,
+			Email: user.Email,
+		})
+	}
+
+	return result, mm.Err
 }
 
 const (
