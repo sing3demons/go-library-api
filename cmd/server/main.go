@@ -1,9 +1,7 @@
 package main
 
 import (
-	"log"
-
-	"github.com/gofiber/fiber/v2"
+	"github.com/sing3demons/go-library-api/app"
 	"github.com/sing3demons/go-library-api/internal/books"
 	"github.com/sing3demons/go-library-api/internal/users"
 	"github.com/sing3demons/go-library-api/pkg/mongo"
@@ -15,10 +13,8 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-
 	// p.Db.Exec("INSERT INTO books (title, author) VALUES ($1, $2)", "The Hobbit", "J.R.R. Tolkien")
 	// p.Db.Exec("INSERT INTO books (title, author) VALUES ($1, $2)", "The Catcher in the Rye", "J.D. Salinger")
-
 	defer p.Close()
 
 	client := mongo.NewMongo("mongodb://localhost:27017")
@@ -27,19 +23,30 @@ func main() {
 	dbCollection := "users"
 	collection := client.Database(dbname).Collection(dbCollection)
 
-	app := fiber.New()
+	//
+	logger := app.NewZapLogger(app.NewAppLogger())
+	server := app.NewApplication(&app.Config{
+		AppConfig: app.AppConfig{
+			Port: "8080",
+		},
+		// KafkaConfig: app.KafkaConfig{
+		// 	Brokers: []string{"localhost:29092"},
+		// 	GroupID: "my-group",
+		// },
+	}, logger)
 
 	// Books module
 	bookRepo := books.NewPostgresBookRepository(p)
 	bookSvc := books.NewBookService(bookRepo)
 	bookHandler := books.NewBookHandler(bookSvc)
-	bookHandler.RegisterRoutes(app)
+	bookHandler.RegisterRoutes(server)
 
 	// Users module
 	userRepo := users.NewMongoUserRepository(collection)
 	userSvc := users.NewUserService(userRepo)
 	userHandler := users.NewUserHandler(userSvc)
-	userHandler.RegisterRoutes(app)
+	userHandler.RegisterRoutes(server)
 
-	log.Fatal(app.Listen(":8080"))
+	// log.Fatal(app.Listen(":8080"))
+	server.Start()
 }
