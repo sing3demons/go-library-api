@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/sing3demons/go-library-api/app/logger"
 	"github.com/sing3demons/go-library-api/pkg/entities"
 	"github.com/sing3demons/go-library-api/pkg/postgres"
 	"github.com/stretchr/testify/assert"
@@ -429,7 +430,7 @@ func TestGetALL(t *testing.T) {
 		}
 		repo := NewPostgresBookRepository(mockDB)
 
-		books, err := repo.GetALL(context.Background(), nil)
+		books, err := repo.GetALL(context.Background(), nil, &logger.MockDetailLog{})
 
 		assert.NoError(t, err)
 		assert.NotEmpty(t, books)
@@ -439,7 +440,7 @@ func TestGetALL(t *testing.T) {
 		mockDB := &MockDB{ShouldFail: true}
 		repo := NewPostgresBookRepository(mockDB)
 
-		books, err := repo.GetALL(context.Background(), nil)
+		books, err := repo.GetALL(context.Background(), nil, &logger.MockDetailLog{})
 
 		assert.Error(t, err)
 		assert.Nil(t, books)
@@ -453,7 +454,7 @@ func TestGetALL(t *testing.T) {
 		}
 		repo := NewPostgresBookRepository(mockDB)
 
-		books, err := repo.GetALL(context.Background(), nil)
+		books, err := repo.GetALL(context.Background(), nil, &logger.MockDetailLog{})
 
 		assert.Error(t, err)
 		assert.Nil(t, books)

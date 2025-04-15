@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/IBM/sarama"
+	"github.com/sing3demons/go-library-api/app/logger"
 )
 
 type IApplication interface {
@@ -41,6 +42,7 @@ type IRouter interface {
 type AppConfig struct {
 	Port   string
 	Router Router
+	LogKP  bool
 }
 
 type KafkaConfig struct {
@@ -81,7 +83,7 @@ type Server struct {
 	Log        ILogger
 }
 
-func NewApplication(config *Config, logger ILogger) IApplication {
+func NewApplication(config *Config, nLog ILogger) IApplication {
 	kafka := &KafkaServer{}
 
 	if len(config.KafkaConfig.Brokers) != 0 {
@@ -94,7 +96,7 @@ func NewApplication(config *Config, logger ILogger) IApplication {
 		if err != nil {
 			log.Fatalf("Failed to create Kafka consumer: %v", err)
 		}
-		k, err := NewKafkaServer(producer, client, &config.KafkaConfig, logger)
+		k, err := NewKafkaServer(producer, client, &config.KafkaConfig, nLog)
 		if err != nil {
 			log.Fatalf("Failed to create Kafka server: %v", err)
 		}
@@ -114,14 +116,26 @@ func NewApplication(config *Config, logger ILogger) IApplication {
 		// case Echo:
 		// 	router = newEchoServer(config, logger)
 		default:
-			router = newServer(config, logger)
+			router = newServer(config, nLog)
 		}
+	}
+
+	if config.AppConfig.LogKP {
+		logger.LoadLogConfig(logger.LogConfig{
+			Summary: logger.SummaryLogConfig{
+				LogFile:    true,
+				LogConsole: true,
+			},
+			Detail: logger.DetailLogConfig{
+				LogFile: true,
+			},
+		})
 	}
 
 	return &Server{
 		kafka:  kafka,
 		router: router,
-		Log:    logger,
+		Log:    nLog,
 	}
 }
 

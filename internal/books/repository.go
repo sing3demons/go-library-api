@@ -3,14 +3,16 @@ package books
 import (
 	"context"
 	"fmt"
+	"time"
 
+	"github.com/sing3demons/go-library-api/app/logger"
 	"github.com/sing3demons/go-library-api/pkg/entities"
 	"github.com/sing3demons/go-library-api/pkg/postgres"
 )
 
 type BookRepository interface {
 	GetByID(ctx context.Context, id string) (*Book, error)
-	GetALL(ctx context.Context, filter map[string]any) ([]*Book, error)
+	GetALL(ctx context.Context, filter map[string]any, detailLog logger.DetailLog) ([]*Book, error)
 	Save(ctx context.Context, book *Book) error
 }
 
@@ -66,7 +68,7 @@ func (r *MongoBookRepository) href(id string) string {
 	return fmt.Sprintf("/books/%s", id)
 }
 
-func (r *MongoBookRepository) GetALL(ctx context.Context, filter map[string]interface{}) ([]*Book, error) {
+func (r *MongoBookRepository) GetALL(ctx context.Context, filter map[string]interface{}, detailLog logger.DetailLog) ([]*Book, error) {
 	var books []*Book
 	// rows, err := r.Db.QueryContext(ctx, "SELECT id, title, author FROM books")
 	// if err != nil {
@@ -94,6 +96,7 @@ func (r *MongoBookRepository) GetALL(ctx context.Context, filter map[string]inte
 		}
 		books = append(books, &book)
 	}
-	fmt.Println("RawData: ", result.RawData)
+	detailLog.AddOutputRequest("progress", "get_book", fmt.Sprintf("pg-%s", time.Nanosecond.String()), result.RawData, result.Body)
+	detailLog.End()
 	return books, nil
 }

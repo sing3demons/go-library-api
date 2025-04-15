@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
 	"github.com/sing3demons/go-library-api/app"
 )
 
@@ -46,6 +47,10 @@ func (h *BookHandler) CreateBook(c app.IContext) error {
 }
 
 func (h *BookHandler) GetAllBooks(c app.IContext) error {
+	node := "client"
+	cmd := "get_books"
+
+	detailLog, summaryLog := c.Log().NewLog("session:"+uuid.New().String(), "", "book")
 	filter := map[string]any{}
 
 	if c.Query("id") != "" {
@@ -56,9 +61,22 @@ func (h *BookHandler) GetAllBooks(c app.IContext) error {
 		filter["title"] = c.Query("title")
 	}
 
-	books, err := h.svc.GetAllBooks(c.Context(), filter)
+	detailLog.AddInputRequest(node, cmd, "", "", filter)
+	summaryLog.AddSuccess(node, cmd, "", "success")
+
+	books, err := h.svc.GetAllBooks(c.Context(), filter, detailLog, summaryLog)
 	if err != nil {
-		return c.Response(fiber.StatusInternalServerError, map[string]any{"error": err.Error()})
+		msg := map[string]string{
+			"error": err.Error(),
+		}
+		detailLog.AddOutputRequest(node, cmd, "", "", msg)
+		summaryLog.AddError(node, cmd, "", "")
+
+		return c.Response(http.StatusInternalServerError, msg)
 	}
+	detailLog.AddOutputRequest(node, cmd, "", "", books)
+
+	detailLog.End()
+	summaryLog.End("200", "")
 	return c.Response(http.StatusOK, books)
 }

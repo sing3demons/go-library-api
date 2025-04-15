@@ -27,7 +27,8 @@ func main() {
 	logger := app.NewAppLogger()
 	server := app.NewApplication(&app.Config{
 		AppConfig: app.AppConfig{
-			Port: "8080",
+			Port:  "8080",
+			LogKP: true,
 		},
 		// KafkaConfig: app.KafkaConfig{
 		// 	Brokers: []string{"localhost:29092"},

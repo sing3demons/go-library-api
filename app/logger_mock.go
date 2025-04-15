@@ -1,5 +1,7 @@
 package app
 
+import "github.com/sing3demons/go-library-api/app/logger"
+
 type MockLogger struct {
 	Called    bool
 	SessionID string
@@ -32,4 +34,10 @@ func (m *MockLogger) Session(v string) ILogger {
 	m.SessionID = v
 	m.Calls = append(m.Calls, "Session")
 	return m
+}
+
+func (m *MockLogger) NewLog(session, initInvoke, scenario string) (logger.DetailLog, logger.SummaryLog) {
+	d := &logger.MockDetailLog{}
+	s := &logger.MockSummaryLog{}
+	return d, s
 }

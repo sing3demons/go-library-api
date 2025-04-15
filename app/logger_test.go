@@ -36,7 +36,7 @@ func TestMockLoggerAllMethods(t *testing.T) {
 	mock.Println("print line")
 
 	// Session() should return self
-	newLogger := mock.Session("my-session")
+	newLogger := mock.Session(mySession)
 	if newLogger != mock {
 		t.Error("expected Session to return the same logger instance")
 	}
@@ -45,10 +45,15 @@ func TestMockLoggerAllMethods(t *testing.T) {
 	if !mock.Called {
 		t.Error("expected Session() to be called")
 	}
-	if mock.SessionID != "my-session" {
+	if mock.SessionID != mySession {
 		t.Errorf("expected SessionID to be 'my-session', got '%s'", mock.SessionID)
 	}
 }
+
+const (
+	msgSession = "existing-session"
+	mySession  = "my-session"
+)
 
 func TestInitSessionGeneratesSessionIfMissing(t *testing.T) {
 	ctx := context.Background()
@@ -71,16 +76,16 @@ func TestInitSessionGeneratesSessionIfMissing(t *testing.T) {
 }
 
 func TestInitSessionUsesExistingSession(t *testing.T) {
-	ctx := context.WithValue(context.Background(), xSession, "existing-session")
+	ctx := context.WithValue(context.Background(), xSession, msgSession)
 	mock := &MockLogger{}
 	newCtx := InitSession(ctx, mock)
 
 	val := newCtx.Value(xSession)
-	if val != "existing-session" {
+	if val != msgSession {
 		t.Errorf("expected existing session to be reused, got '%v'", val)
 	}
 
-	if mock.SessionID != "existing-session" {
+	if mock.SessionID != msgSession {
 		t.Errorf("mock logger received unexpected session ID: %s", mock.SessionID)
 	}
 }

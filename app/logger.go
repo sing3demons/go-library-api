@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/google/uuid"
+	"github.com/sing3demons/go-library-api/app/logger"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -30,6 +31,8 @@ type ILogger interface {
 	Println(v ...any)
 
 	Session(v string) ILogger
+
+	NewLog(session, initInvoke, scenario string) (detailLog logger.DetailLog, summaryLog logger.SummaryLog)
 }
 
 const (
@@ -207,4 +210,10 @@ func (l *Logger) WithName(name string) {
 
 func (l *Logger) Println(v ...any) {
 	l.log.Sugar().Info(v...)
+}
+
+func (l *Logger) NewLog(session, initInvoke, scenario string) (detailLog logger.DetailLog, summaryLog logger.SummaryLog) {
+	detailLog = logger.NewDetailLog(session, initInvoke, scenario)
+	summaryLog = logger.NewSummaryLog(session, initInvoke, scenario)
+	return detailLog, summaryLog
 }
