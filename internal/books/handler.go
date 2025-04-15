@@ -3,7 +3,6 @@ package books
 import (
 	"net/http"
 
-	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 	"github.com/sing3demons/go-library-api/app"
 )
@@ -26,7 +25,7 @@ func (h *BookHandler) GetBook(c app.IContext) error {
 	id := c.Param("id")
 	book, err := h.svc.GetBook(c.Context(), id)
 	if err != nil {
-		return c.Response(fiber.StatusInternalServerError, map[string]any{"error": err.Error()})
+		return c.Response(http.StatusInternalServerError, map[string]any{"error": err.Error()})
 	}
 	if book == nil {
 		return c.Response(http.StatusNotFound, map[string]any{"error": "book not found"})
@@ -37,13 +36,13 @@ func (h *BookHandler) GetBook(c app.IContext) error {
 func (h *BookHandler) CreateBook(c app.IContext) error {
 	var req Book
 	if err := c.ReadInput(&req); err != nil {
-		return c.Response(fiber.StatusBadRequest, map[string]any{"error": "invalid request"})
+		return c.Response(http.StatusBadRequest, map[string]any{"error": "invalid request"})
 	}
 	err := h.svc.CreateBook(c.Context(), &req)
 	if err != nil {
-		return c.Response(fiber.StatusInternalServerError, map[string]any{"error": err.Error()})
+		return c.Response(http.StatusInternalServerError, map[string]any{"error": err.Error()})
 	}
-	return c.Response(fiber.StatusCreated, map[string]any{"message": "book created", "id": req.ID})
+	return c.Response(http.StatusCreated, map[string]any{"message": "book created", "id": req.ID})
 }
 
 func (h *BookHandler) GetAllBooks(c app.IContext) error {
