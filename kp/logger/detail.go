@@ -24,7 +24,7 @@ type DetailLog interface {
 	AutoEnd() bool
 }
 
-func NewDetailLog(Session, initInvoke, scenario string) DetailLog {
+func NewDetailLog(Session, initInvoke, scenario string, autoEnd bool) DetailLog {
 	// session := req.Context().Value(xSession)
 	currentTime := time.Now()
 	if Session == "" {
@@ -49,6 +49,7 @@ func NewDetailLog(Session, initInvoke, scenario string) DetailLog {
 		startTimeDate: time.Now(),
 		timeCounter:   make(map[string]time.Time),
 		// req:           req,
+		autoEnd: autoEnd,
 	}
 
 	return data
@@ -153,7 +154,10 @@ func (dl *detailLog) AddOutputResponse(node, cmd, invoke string, rawData, data a
 		rawData: rawData,
 		data:    ToStruct(data),
 	})
-	// dl.End()
+
+	if dl.autoEnd {
+		dl.End()
+	}
 }
 
 func (dl *detailLog) addInput(input *logEvent) {
@@ -204,6 +208,10 @@ func (dl *detailLog) AddOutputRequest(node, cmd, invoke string, rawData, data an
 		// protocol:       dl.req.Proto,
 		// protocolMethod: dl.req.Method,
 	})
+
+	if dl.autoEnd {
+		dl.End()
+	}
 }
 
 func (dl *detailLog) AddOutput(out logEvent) {

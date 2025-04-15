@@ -1,6 +1,10 @@
 package kp
 
-import "github.com/sing3demons/go-library-api/kp/logger"
+import (
+	"context"
+
+	"github.com/sing3demons/go-library-api/kp/logger"
+)
 
 type MockLogger struct {
 	Called    bool
@@ -36,8 +40,12 @@ func (m *MockLogger) Session(v string) ILogger {
 	return m
 }
 
-func (m *MockLogger) NewLog(session, initInvoke, scenario string) (logger.DetailLog, logger.SummaryLog) {
+func (m *MockLogger) NewLog(c context.Context, initInvoke, scenario string) (logger.DetailLog, logger.SummaryLog) {
 	d := &logger.MockDetailLog{}
 	s := &logger.MockSummaryLog{}
 	return d, s
+}
+
+func (m *MockLogger) L(c context.Context) ILogger {
+	return &MockLogger{}
 }

@@ -32,7 +32,8 @@ type ILogger interface {
 
 	Session(v string) ILogger
 
-	NewLog(session, initInvoke, scenario string) (detailLog logger.DetailLog, summaryLog logger.SummaryLog)
+	NewLog(c context.Context, initInvoke, scenario string) (detailLog logger.DetailLog, summaryLog logger.SummaryLog)
+	L(c context.Context) ILogger
 }
 
 const (
@@ -122,6 +123,7 @@ func NewAppLogger(log ...*zap.Logger) ILogger {
 func (l *Logger) L(c context.Context) ILogger {
 	switch logger := c.Value(key).(type) {
 	case ILogger:
+		l.ctx = c
 		return logger
 	default:
 		return l
@@ -141,6 +143,7 @@ func (l Logger) Session(v string) ILogger {
 	l.log = log
 	return &Logger{
 		log: l.log,
+		ctx: l.ctx,
 	}
 }
 
@@ -212,8 +215,24 @@ func (l *Logger) Println(v ...any) {
 	l.log.Sugar().Info(v...)
 }
 
-func (l *Logger) NewLog(session, initInvoke, scenario string) (detailLog logger.DetailLog, summaryLog logger.SummaryLog) {
-	detailLog = logger.NewDetailLog(session, initInvoke, scenario)
+func (l *Logger) NewLog(c context.Context, initInvoke, scenario string) (detailLog logger.DetailLog, summaryLog logger.SummaryLog) {
+	if l.ctx == nil {
+		l.ctx = InitSession(c, l)
+	}
+	session, ok := l.ctx.Value(xSession).(string)
+	if !ok {
+		session = ""
+	}
+	if session == "" {
+		uuidV7, err := uuid.NewV7()
+		if err != nil {
+			uuidV7 = uuid.New()
+		}
+		session = uuidV7.String()
+		l.ctx = context.WithValue(l.ctx, xSession, session)
+	}
+
+	detailLog = logger.NewDetailLog(session, initInvoke, scenario, false)
 	summaryLog = logger.NewSummaryLog(session, initInvoke, scenario)
 	return detailLog, summaryLog
 }

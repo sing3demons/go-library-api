@@ -35,24 +35,28 @@ func TestNewDetailLog(t *testing.T) {
 		Session    string
 		initInvoke string
 		scenario   string
+		autoEnd    bool
 	}{
 		{
 			name:       "All parameters provided",
 			Session:    "test_session",
 			initInvoke: "test_invoke",
 			scenario:   "test_scenario",
+			autoEnd:    true,
 		},
 		{
 			name:       "Empty Session",
 			Session:    "",
 			initInvoke: "test_invoke",
 			scenario:   "test_scenario",
+			autoEnd:    true,
 		},
 		{
 			name:       "Empty initInvoke",
 			Session:    "test_session",
 			initInvoke: "",
 			scenario:   "test_scenario",
+			autoEnd:    true,
 		},
 		{
 			name:       "Empty Session and initInvoke",
@@ -64,7 +68,7 @@ func TestNewDetailLog(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			dl := NewDetailLog(tc.Session, tc.initInvoke, tc.scenario).(*detailLog)
+			dl := NewDetailLog(tc.Session, tc.initInvoke, tc.scenario, tc.autoEnd).(*detailLog)
 
 			if tc.Session == "" {
 				expectedSession := "default_" + time.Now().Format("20060102150405")
@@ -134,7 +138,7 @@ func TestIsRawDataEnabled(t *testing.T) {
 				},
 			}
 
-			dl := NewDetailLog("test_session", "test_invoke", "test_scenario").(*detailLog)
+			dl := NewDetailLog("test_session", "test_invoke", "test_scenario", false).(*detailLog)
 			result := dl.IsRawDataEnabled()
 
 			if result != tc.expected {
@@ -228,7 +232,7 @@ func TestAddInputHttpRequest(t *testing.T) {
 				},
 			}
 
-			dl := NewDetailLog("test_session", "test_invoke", "test_scenario").(*detailLog)
+			dl := NewDetailLog("test_session", "test_invoke", "test_scenario", false).(*detailLog)
 			dl.AddInputHttpRequest(tc.node, tc.cmd, tc.invoke, tc.req, tc.rawData)
 
 			if len(dl.Input) != 1 {
@@ -314,7 +318,7 @@ func TestAddInputRequest(t *testing.T) {
 				},
 			}
 
-			dl := NewDetailLog("test_session", "test_invoke", "test_scenario").(*detailLog)
+			dl := NewDetailLog("test_session", "test_invoke", "test_scenario", false).(*detailLog)
 			dl.AddInputRequest(tc.node, tc.cmd, tc.invoke, tc.rawData, tc.data)
 
 			if len(dl.Input) != 1 {
@@ -398,7 +402,7 @@ func TestAddInputResponse(t *testing.T) {
 				},
 			}
 
-			dl := NewDetailLog("test_session", "test_invoke", "test_scenario").(*detailLog)
+			dl := NewDetailLog("test_session", "test_invoke", "test_scenario", false).(*detailLog)
 			dl.AddInputResponse(tc.node, tc.cmd, tc.invoke, tc.rawData, tc.data, tc.protocol, tc.protocolMethod)
 
 			if len(dl.Input) != 1 {
@@ -480,7 +484,7 @@ func TestAddOutputResponse(t *testing.T) {
 				},
 			}
 
-			dl := NewDetailLog("test_session", "test_invoke", "test_scenario").(*detailLog)
+			dl := NewDetailLog("test_session", "test_invoke", "test_scenario", false).(*detailLog)
 			dl.AddOutputResponse(tc.node, tc.cmd, tc.invoke, tc.rawData, tc.data)
 
 			if len(dl.Output) != 1 {
@@ -557,7 +561,7 @@ func TestAddOutputRequest(t *testing.T) {
 				},
 			}
 
-			dl := NewDetailLog("test_session", "test_invoke", "test_scenario").(*detailLog)
+			dl := NewDetailLog("test_session", "test_invoke", "test_scenario", false).(*detailLog)
 			dl.AddOutputRequest(tc.node, tc.cmd, tc.invoke, tc.rawData, tc.data)
 
 			if len(dl.Output) != 1 {
@@ -642,7 +646,7 @@ func TestEndDetail(t *testing.T) {
 				},
 			}
 
-			dl := NewDetailLog("test_session", "test_invoke", "test_scenario")
+			dl := NewDetailLog("test_session", "test_invoke", "test_scenario", false)
 			dl.AddInputRequest("test_node", "test_cmd", "test_invoke", "", map[string]interface{}{"key": "value"})
 			dl.AddOutputRequest("test_node", "test_cmd", "test_invoke", "", map[string]interface{}{"key": "value"})
 
@@ -725,7 +729,7 @@ func TestAutoEnd(t *testing.T) {
 				},
 			}
 
-			dl := NewDetailLog("test_session", "test_invoke", "test_scenario").(*detailLog)
+			dl := NewDetailLog("test_session", "test_invoke", "test_scenario", false).(*detailLog)
 			dl.Input = tc.inputLogs
 			dl.Output = tc.outputLogs
 

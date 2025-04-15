@@ -3,7 +3,6 @@ package books
 import (
 	"net/http"
 
-	"github.com/google/uuid"
 	"github.com/sing3demons/go-library-api/kp"
 )
 
@@ -24,7 +23,8 @@ func (h *BookHandler) RegisterRoutes(r kp.IApplication) {
 func (h *BookHandler) GetBook(c kp.IContext) error {
 	node := "client"
 	cmd := "get_book"
-	detailLog, summaryLog := c.Log().NewLog("session:"+uuid.New().String(), "", "book")
+	logger := c.Log()
+	detailLog, summaryLog := logger.NewLog(c.Context(), "", "book")
 	id := c.Param("id")
 
 	detailLog.AddInputRequest(node, cmd, "", "", map[string]any{"id": id})
@@ -46,7 +46,7 @@ func (h *BookHandler) GetBook(c kp.IContext) error {
 func (h *BookHandler) CreateBook(c kp.IContext) error {
 	node := "client"
 	cmd := "create_book"
-	detailLog, summaryLog := c.Log().NewLog("session:"+uuid.New().String(), "", "book")
+	detailLog, summaryLog := c.Log().NewLog(c.Context(), "", "book")
 	detailLog.AddInputRequest(node, cmd, "", "", nil)
 	summaryLog.AddSuccess(node, cmd, "", "success")
 	defer detailLog.End()
@@ -69,7 +69,7 @@ func (h *BookHandler) GetAllBooks(c kp.IContext) error {
 	node := "client"
 	cmd := "get_books"
 
-	detailLog, summaryLog := c.Log().NewLog("session:"+uuid.New().String(), "", "book")
+	detailLog, summaryLog := c.Log().NewLog(c.Context(), "", "book")
 	filter := map[string]any{}
 
 	if c.Query("id") != "" {

@@ -78,6 +78,7 @@ type detailLog struct {
 	timeCounter     map[string]time.Time `json:"-"`
 	// req             *http.Request
 	mu sync.Mutex
+	autoEnd bool
 }
 
 type logEvent struct {
