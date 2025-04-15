@@ -1,4 +1,4 @@
-package app
+package kp
 
 import (
 	"context"
@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/IBM/sarama"
-	"github.com/sing3demons/go-library-api/app/logger"
+	"github.com/sing3demons/go-library-api/kp/logger"
 )
 
 type IApplication interface {

@@ -1,9 +1,9 @@
 package main
 
 import (
-	"github.com/sing3demons/go-library-api/app"
 	"github.com/sing3demons/go-library-api/internal/books"
 	"github.com/sing3demons/go-library-api/internal/users"
+	"github.com/sing3demons/go-library-api/kp"
 	"github.com/sing3demons/go-library-api/pkg/mongo"
 	"github.com/sing3demons/go-library-api/pkg/postgres"
 )
@@ -24,9 +24,9 @@ func main() {
 	collection := client.Database(dbname).Collection(dbCollection)
 
 	//
-	logger := app.NewAppLogger()
-	server := app.NewApplication(&app.Config{
-		AppConfig: app.AppConfig{
+	logger := kp.NewAppLogger()
+	server := kp.NewApplication(&kp.Config{
+		AppConfig: kp.AppConfig{
 			Port:  "8080",
 			LogKP: true,
 		},

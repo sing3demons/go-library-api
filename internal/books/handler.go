@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/google/uuid"
-	"github.com/sing3demons/go-library-api/app"
+	"github.com/sing3demons/go-library-api/kp"
 )
 
 type BookHandler struct {
@@ -15,13 +15,13 @@ func NewBookHandler(svc BookService) *BookHandler {
 	return &BookHandler{svc: svc}
 }
 
-func (h *BookHandler) RegisterRoutes(r app.IApplication) {
+func (h *BookHandler) RegisterRoutes(r kp.IApplication) {
 	r.Get("/books/:id", h.GetBook)
 	r.Post("/books", h.CreateBook)
 	r.Get("/books", h.GetAllBooks)
 }
 
-func (h *BookHandler) GetBook(c app.IContext) error {
+func (h *BookHandler) GetBook(c kp.IContext) error {
 	id := c.Param("id")
 	book, err := h.svc.GetBook(c.Context(), id)
 	if err != nil {
@@ -33,7 +33,7 @@ func (h *BookHandler) GetBook(c app.IContext) error {
 	return c.Response(http.StatusOK, book)
 }
 
-func (h *BookHandler) CreateBook(c app.IContext) error {
+func (h *BookHandler) CreateBook(c kp.IContext) error {
 	var req Book
 	if err := c.ReadInput(&req); err != nil {
 		return c.Response(http.StatusBadRequest, map[string]any{"error": "invalid request"})
@@ -45,7 +45,7 @@ func (h *BookHandler) CreateBook(c app.IContext) error {
 	return c.Response(http.StatusCreated, map[string]any{"message": "book created", "id": req.ID})
 }
 
-func (h *BookHandler) GetAllBooks(c app.IContext) error {
+func (h *BookHandler) GetAllBooks(c kp.IContext) error {
 	node := "client"
 	cmd := "get_books"
 

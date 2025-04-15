@@ -1,4 +1,4 @@
-package app
+package kp
 
 import (
 	"context"
@@ -12,7 +12,7 @@ func removeBraces(str string) string {
 
 type ContextKey string
 
-func setParam(path string, r *http.Request) *http.Request {
+func SetParam(path string, r *http.Request) *http.Request {
 	subPath := strings.Split(path, "/")
 	sss := strings.Split(r.URL.Path, "/")
 
@@ -33,7 +33,6 @@ func setParam(path string, r *http.Request) *http.Request {
 					ctx := context.WithValue(r.Context(), ContextKey(key), v)
 					r = r.WithContext(ctx)
 				}
-
 			}
 		}
 	}

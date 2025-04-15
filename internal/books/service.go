@@ -3,7 +3,7 @@ package books
 import (
 	"context"
 
-	"github.com/sing3demons/go-library-api/app/logger"
+	"github.com/sing3demons/go-library-api/kp/logger"
 )
 
 type BookService interface {

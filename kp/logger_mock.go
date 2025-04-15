@@ -1,6 +1,6 @@
-package app
+package kp
 
-import "github.com/sing3demons/go-library-api/app/logger"
+import "github.com/sing3demons/go-library-api/kp/logger"
 
 type MockLogger struct {
 	Called    bool

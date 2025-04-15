@@ -1,11 +1,11 @@
-package app
+package kp
 
 import (
 	"context"
 	"os"
 
 	"github.com/google/uuid"
-	"github.com/sing3demons/go-library-api/app/logger"
+	"github.com/sing3demons/go-library-api/kp/logger"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )

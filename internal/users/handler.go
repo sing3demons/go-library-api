@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/sing3demons/go-library-api/app"
+	"github.com/sing3demons/go-library-api/kp"
 )
 
 type UserHandler struct {
@@ -15,13 +15,13 @@ func NewUserHandler(svc UserService) *UserHandler {
 	return &UserHandler{svc: svc}
 }
 
-func (h *UserHandler) RegisterRoutes(r app.IApplication) {
+func (h *UserHandler) RegisterRoutes(r kp.IApplication) {
 	r.Post("/users/register", h.RegisterUser)
 	r.Get("/users/:id", h.GetUser)
 	r.Get("/users", h.GetAllUsers)
 }
 
-func (h *UserHandler) RegisterUser(c app.IContext) error {
+func (h *UserHandler) RegisterUser(c kp.IContext) error {
 	var req struct {
 		Name  string `json:"name"`
 		Email string `json:"email"`
@@ -36,7 +36,7 @@ func (h *UserHandler) RegisterUser(c app.IContext) error {
 	return c.Response(http.StatusCreated, user)
 }
 
-func (h *UserHandler) GetUser(c app.IContext) error {
+func (h *UserHandler) GetUser(c kp.IContext) error {
 	id := c.Param("id")
 	book, err := h.svc.GetUserById(c.Context(), id)
 	if err != nil {
@@ -48,7 +48,7 @@ func (h *UserHandler) GetUser(c app.IContext) error {
 	return c.Response(http.StatusOK, book)
 }
 
-func (h *UserHandler) GetAllUsers(c app.IContext) error {
+func (h *UserHandler) GetAllUsers(c kp.IContext) error {
 	users, err := h.svc.GetAllUsers(c.Context())
 	if err != nil {
 		return c.Response(http.StatusInternalServerError, map[string]any{"error": err.Error()})

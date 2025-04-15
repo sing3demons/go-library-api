@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/sing3demons/go-library-api/app/logger"
+	"github.com/sing3demons/go-library-api/kp/logger"
 	"github.com/sing3demons/go-library-api/pkg/entities"
 	"github.com/sing3demons/go-library-api/pkg/postgres"
 )
