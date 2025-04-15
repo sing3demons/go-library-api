@@ -25,33 +25,32 @@ func newServer(cfg *Config, log ILogger) IRouter {
 }
 
 func (app *httpApplication) Get(path string, handler HandleFunc, middlewares ...Middleware) {
-	app.router.GET(path, func(c *gin.Context) {
+	// app.router.GET(path, func(c *gin.Context) {
+	// 	preHandle(handler, preMiddleware(app.middlewares, middlewares)...)(newMuxContext(c, &app.cfg.KafkaConfig, app.log))
+	// })
+	app.router.GET(path, app.wrapHandler(handler, middlewares...))
+}
+
+func (app *httpApplication) wrapHandler(handler HandleFunc, middlewares ...Middleware) gin.HandlerFunc {
+	return func(c *gin.Context) {
 		preHandle(handler, preMiddleware(app.middlewares, middlewares)...)(newMuxContext(c, &app.cfg.KafkaConfig, app.log))
-	})
+	}
 }
 
 func (app *httpApplication) Post(path string, handler HandleFunc, middlewares ...Middleware) {
-	app.router.POST(path, func(c *gin.Context) {
-		preHandle(handler, preMiddleware(app.middlewares, middlewares)...)(newMuxContext(c, &app.cfg.KafkaConfig, app.log))
-	})
+	app.router.POST(path, app.wrapHandler(handler, middlewares...))
 }
 
 func (app *httpApplication) Put(path string, handler HandleFunc, middlewares ...Middleware) {
-	app.router.PUT(path, func(c *gin.Context) {
-		preHandle(handler, preMiddleware(app.middlewares, middlewares)...)(newMuxContext(c, &app.cfg.KafkaConfig, app.log))
-	})
+	app.router.PUT(path, app.wrapHandler(handler, middlewares...))
 }
 
 func (app *httpApplication) Delete(path string, handler HandleFunc, middlewares ...Middleware) {
-	app.router.DELETE(path, func(c *gin.Context) {
-		preHandle(handler, preMiddleware(app.middlewares, middlewares)...)(newMuxContext(c, &app.cfg.KafkaConfig, app.log))
-	})
+	app.router.DELETE(path, app.wrapHandler(handler, middlewares...))
 }
 
 func (app *httpApplication) Patch(path string, handler HandleFunc, middlewares ...Middleware) {
-	app.router.PATCH(path, func(c *gin.Context) {
-		preHandle(handler, preMiddleware(app.middlewares, middlewares)...)(newMuxContext(c, &app.cfg.KafkaConfig, app.log))
-	})
+	app.router.PATCH(path, app.wrapHandler(handler, middlewares...))
 }
 
 func (app *httpApplication) Use(middlewares ...Middleware) {

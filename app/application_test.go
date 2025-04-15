@@ -14,7 +14,6 @@ import (
 	"github.com/IBM/sarama/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"go.uber.org/zap"
 )
 
 const (
@@ -44,7 +43,7 @@ func (m *MockRouter) Register() *http.Server {
 func TestNewApplication(t *testing.T) {
 	mockRouter := new(MockRouter)
 
-	logger := NewZapLogger(zap.NewNop())
+	logger := NewMockLogger()
 
 	mockRouter.On("Register").Return(&http.Server{})
 
@@ -60,7 +59,7 @@ func TestNewApplication(t *testing.T) {
 }
 
 func TestApplicationGet(t *testing.T) {
-	logger := NewZapLogger(zap.NewNop())
+	logger := NewMockLogger()
 
 	config := &Config{
 		AppConfig: AppConfig{
@@ -89,7 +88,7 @@ func TestApplicationGet(t *testing.T) {
 }
 
 func TestApplicationPost(t *testing.T) {
-	logger := NewZapLogger(zap.NewNop())
+	logger := NewMockLogger()
 
 	config := &Config{
 		AppConfig: AppConfig{
@@ -122,7 +121,7 @@ func TestApplicationPost(t *testing.T) {
 }
 
 func TestApplicationPut(t *testing.T) {
-	logger := NewZapLogger(zap.NewNop())
+	logger := NewMockLogger()
 
 	config := &Config{
 		AppConfig: AppConfig{
@@ -160,7 +159,7 @@ func TestApplicationPut(t *testing.T) {
 }
 
 func TestApplicationDelete(t *testing.T) {
-	logger := NewZapLogger(zap.NewNop())
+	logger := NewMockLogger()
 
 	config := &Config{
 		AppConfig: AppConfig{
@@ -190,7 +189,7 @@ func TestApplicationDelete(t *testing.T) {
 }
 
 func TestApplicationPatch(t *testing.T) {
-	logger := NewZapLogger(zap.NewNop())
+	logger := NewMockLogger()
 
 	config := &Config{
 		AppConfig: AppConfig{
@@ -228,7 +227,7 @@ func TestApplicationPatch(t *testing.T) {
 }
 
 func TestApplicationUse(t *testing.T) {
-	logger := NewZapLogger(zap.NewNop())
+	logger := NewMockLogger()
 
 	config := &Config{
 		AppConfig: AppConfig{
@@ -261,7 +260,7 @@ func TestApplicationUse(t *testing.T) {
 }
 
 func TestApplicationServeHTTP(t *testing.T) {
-	logger := NewZapLogger(zap.NewNop())
+	logger := NewMockLogger()
 
 	config := &Config{
 		AppConfig: AppConfig{
@@ -288,7 +287,7 @@ func TestApplicationServeHTTP(t *testing.T) {
 }
 
 func TestApplicationServeHTTPWithNoRoute(t *testing.T) {
-	logger := NewZapLogger(zap.NewNop())
+	logger := NewMockLogger()
 
 	config := &Config{
 		AppConfig: AppConfig{
@@ -307,7 +306,7 @@ func TestApplicationServeHTTPWithNoRoute(t *testing.T) {
 }
 
 func TestApplicationConsume(t *testing.T) {
-	logger := NewZapLogger(zap.NewNop())
+	logger := NewMockLogger()
 	mockConsumer := &MockConsumerGroup{}
 
 	config := &Config{
@@ -340,7 +339,7 @@ func TestApplicationConsume(t *testing.T) {
 
 func TestServerStart(t *testing.T) {
 
-	mockLogger := NewZapLogger(zap.NewNop())
+	mockLogger := NewMockLogger()
 	mockConsumer := &MockConsumerGroup{}
 
 	server := NewApplication(&Config{

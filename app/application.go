@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -86,17 +87,16 @@ func NewApplication(config *Config, logger ILogger) IApplication {
 	if len(config.KafkaConfig.Brokers) != 0 {
 		producer, err := newProducer(&config.KafkaConfig)
 		if err != nil {
-			logger.Fatalf("Failed to create Kafka consumer: %v", err)
-
+			log.Fatalf("Failed to create Kafka consumer: %v", err)
 		}
 
 		client, err := newConsumer(&config.KafkaConfig)
 		if err != nil {
-			logger.Fatalf("Failed to create Kafka consumer: %v", err)
+			log.Fatalf("Failed to create Kafka consumer: %v", err)
 		}
 		k, err := NewKafkaServer(producer, client, &config.KafkaConfig, logger)
 		if err != nil {
-			logger.Fatalf("Failed to create Kafka server: %v", err)
+			log.Fatalf("Failed to create Kafka server: %v", err)
 		}
 
 		kafka = k
@@ -138,7 +138,8 @@ func (s *Server) Start() {
 		go func() {
 			s.Log.Println("Starting HTTP server on " + s.httpServer.Addr)
 			if err := s.httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-				s.Log.Fatalf("HTTP Server Error: %v", err)
+				s.Log.Printf("HTTP Server Error: %v", err)
+				os.Exit(1)
 			}
 		}()
 	}

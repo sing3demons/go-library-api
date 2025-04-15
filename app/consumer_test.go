@@ -5,11 +5,10 @@ import (
 
 	"github.com/IBM/sarama/mocks"
 	"github.com/stretchr/testify/assert"
-	"go.uber.org/zap"
 )
 
 func TestNewConsumerContext(t *testing.T) {
-	logger := NewZapLogger(zap.NewNop())
+	logger := NewMockLogger()
 	mockProducer := mocks.NewSyncProducer(t, nil)
 	topic := "test-topic"
 	body := `{"message": "hello world"}`
@@ -23,7 +22,7 @@ func TestNewConsumerContext(t *testing.T) {
 }
 
 func TestReadInput(t *testing.T) {
-	logger := NewZapLogger(zap.NewNop())
+	logger := NewMockLogger()
 
 	mockProducer := mocks.NewSyncProducer(t, nil)
 	topic := "test-topic"

@@ -127,6 +127,6 @@ func (ctx *kafkaContext) Response(code int, data any) error {
 	return nil
 }
 
-// func (ctx *kafkaContext) SendMessage(topic string, payload any, opts ...OptionProducerMsg) (RecordMetadata, error) {
-// 	return producer(ctx.producer, topic, payload, opts...)
-// }
+func (ctx *kafkaContext) SendMessage(topic string, payload any, opts ...OptionProducerMsg) (RecordMetadata, error) {
+	return producer(ctx.producer, topic, payload, opts...)
+}

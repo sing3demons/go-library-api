@@ -8,7 +8,6 @@ import (
 
 	"github.com/IBM/sarama"
 	"github.com/IBM/sarama/mocks"
-	"go.uber.org/zap"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -60,7 +59,7 @@ func TestKafkaServerStartConsumer(t *testing.T) {
 	mockProducer := mocks.NewSyncProducer(t, nil)
 	ctx, cancel := context.WithCancel(context.Background())
 
-	server, err := NewKafkaServer(mockProducer, mockConsumer, &KafkaConfig{}, NewZapLogger(zap.NewNop()))
+	server, err := NewKafkaServer(mockProducer, mockConsumer, &KafkaConfig{}, NewMockLogger())
 	assert.NoError(t, err)
 	assert.NotNil(t, server)
 
@@ -74,7 +73,7 @@ func TestKafkaServerStartConsumer(t *testing.T) {
 }
 
 func TestKafkaServerShutdown(t *testing.T) {
-	logger := NewZapLogger(zap.NewNop())
+	logger := NewMockLogger()
 
 	mockConsumer := &MockConsumerGroup{}
 
@@ -88,7 +87,7 @@ func TestKafkaServerShutdown(t *testing.T) {
 }
 
 func TestKafkaServerConsume(t *testing.T) {
-	logger := NewZapLogger(zap.NewNop())
+	logger := NewMockLogger()
 
 	mockConsumer := &MockConsumerGroup{}
 	mockProducer := mocks.NewSyncProducer(t, nil)
@@ -182,7 +181,7 @@ func TestConsumeClaim(t *testing.T) {
 	mockSession := new(MockConsumerGroupSession)
 	mockClaim := new(MockConsumerGroupClaim)
 	producer := mocks.NewSyncProducer(t, nil)
-	logger := NewZapLogger(zap.NewNop())
+	logger := NewMockLogger()
 
 	server := &KafkaServer{
 		producer: producer,
@@ -231,7 +230,7 @@ func TestConsumeClaimHandlerError(t *testing.T) {
 	mockSession := new(MockConsumerGroupSession)
 	mockClaim := new(MockConsumerGroupClaim)
 	producer := mocks.NewSyncProducer(t, nil)
-	logger := NewZapLogger(zap.NewNop())
+	logger := NewMockLogger()
 
 	server := &KafkaServer{
 		producer: producer,
@@ -280,7 +279,7 @@ func TestConsumeClaimHandlerError(t *testing.T) {
 
 // 	mockProducer := mocks.NewSyncProducer(t, nil)
 
-// 	server, err := NewKafkaServer(mockProducer, mockConsumer, &KafkaConfig{}, NewZapLogger(zap.NewNop()))
+// 	server, err := NewKafkaServer(mockProducer, mockConsumer, &KafkaConfig{}, NewMockLogger())
 // 	assert.NoError(t, err)
 // 	assert.NotNil(t, server)
 

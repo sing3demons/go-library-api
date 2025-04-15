@@ -9,13 +9,12 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
-	"go.uber.org/zap"
 )
 
 func TestGinApplicationGet(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
-	log := NewZapLogger(zap.NewNop())
+	log := NewMockLogger()
 
 	cfg := &Config{
 		AppConfig: AppConfig{
@@ -45,7 +44,7 @@ func printErr(s, code int) string {
 func TestGinApplicationPost(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
-	log := NewZapLogger(zap.NewNop())
+	log := NewMockLogger()
 
 	cfg := &Config{
 		AppConfig: AppConfig{
@@ -71,7 +70,7 @@ func TestGinApplicationPost(t *testing.T) {
 func TestGinApplicationPut(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
-	log := NewZapLogger(zap.NewNop())
+	log := NewMockLogger()
 
 	cfg := &Config{
 		AppConfig: AppConfig{
@@ -97,7 +96,7 @@ func TestGinApplicationPut(t *testing.T) {
 func TestGinApplicationDelete(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
-	log := NewZapLogger(zap.NewNop())
+	log := NewMockLogger()
 
 	cfg := &Config{
 		AppConfig: AppConfig{
@@ -123,7 +122,7 @@ func TestGinApplicationDelete(t *testing.T) {
 func TestGinApplicationPatch(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
-	log := NewZapLogger(zap.NewNop())
+	log := NewMockLogger()
 
 	cfg := &Config{
 		AppConfig: AppConfig{
@@ -163,7 +162,7 @@ func TestGinApplicationPatch(t *testing.T) {
 func TestGinApplicationUse(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
-	log := NewZapLogger(zap.NewNop())
+	log := NewMockLogger()
 
 	cfg := &Config{
 		AppConfig: AppConfig{
@@ -196,7 +195,7 @@ func TestGinApplicationUse(t *testing.T) {
 func TestGinApplicationRegister(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
-	log := NewZapLogger(zap.NewNop())
+	log := NewMockLogger()
 
 	cfg := &Config{
 		AppConfig: AppConfig{
@@ -214,7 +213,7 @@ func TestGinApplicationRegister(t *testing.T) {
 func TestGinApplicationParam(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
-	log := NewZapLogger(zap.NewNop())
+	log := NewMockLogger()
 
 	cfg := &Config{
 		AppConfig: AppConfig{

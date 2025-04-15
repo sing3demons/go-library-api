@@ -24,7 +24,7 @@ func main() {
 	collection := client.Database(dbname).Collection(dbCollection)
 
 	//
-	logger := app.NewZapLogger(app.NewAppLogger())
+	logger := app.NewAppLogger()
 	server := app.NewApplication(&app.Config{
 		AppConfig: app.AppConfig{
 			Port: "8080",

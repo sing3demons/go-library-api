@@ -23,8 +23,8 @@ type ILogger interface {
 	Err(msg string, err error)
 	DPanic(args ...any)
 	DPanicf(template string, args ...any)
-	Fatal(args ...any)
-	Fatalf(template string, args ...any)
+	// Fatal(args ...any)
+	// Fatalf(template string, args ...any)
 	Printf(template string, args ...any)
 	WithName(name string)
 	Println(v ...any)
@@ -72,7 +72,8 @@ type LogConfig struct {
 	encoding string
 }
 
-func NewAppLogger() *zap.Logger {
+func NewAppLogger(log ...*zap.Logger) ILogger {
+	var logger *zap.Logger
 	l := &LogConfig{}
 	logWriter := zapcore.AddSync(os.Stdout)
 	logLevel := zapcore.InfoLevel
@@ -104,10 +105,16 @@ func NewAppLogger() *zap.Logger {
 		encoder = zapcore.NewJSONEncoder(encoderCfg)
 	}
 
-	core := zapcore.NewCore(encoder, logWriter, zap.NewAtomicLevelAt(logLevel))
-	logger := zap.New(core, zap.AddCaller(), zap.AddCallerSkip(1))
+	if len(log) > 0 {
+		logger = log[0]
+	} else {
+		core := zapcore.NewCore(encoder, logWriter, zap.NewAtomicLevelAt(logLevel))
+		logger = zap.New(core, zap.AddCaller(), zap.AddCallerSkip(1))
+	}
 
-	return logger
+	return &Logger{
+		log: logger,
+	}
 }
 func (l *Logger) L(c context.Context) ILogger {
 	switch logger := c.Value(key).(type) {
@@ -115,12 +122,6 @@ func (l *Logger) L(c context.Context) ILogger {
 		return logger
 	default:
 		return l
-	}
-}
-
-func NewZapLogger(log *zap.Logger) ILogger {
-	return &Logger{
-		log: log,
 	}
 }
 
