@@ -22,26 +22,46 @@ func (h *BookHandler) RegisterRoutes(r kp.IApplication) {
 }
 
 func (h *BookHandler) GetBook(c kp.IContext) error {
+	node := "client"
+	cmd := "get_book"
+	detailLog, summaryLog := c.Log().NewLog("session:"+uuid.New().String(), "", "book")
 	id := c.Param("id")
-	book, err := h.svc.GetBook(c.Context(), id)
+
+	detailLog.AddInputRequest(node, cmd, "", "", map[string]any{"id": id})
+	summaryLog.AddSuccess(node, cmd, "", "success")
+
+	book, err := h.svc.GetBook(c.Context(), id, detailLog, summaryLog)
 	if err != nil {
 		return c.Response(http.StatusInternalServerError, map[string]any{"error": err.Error()})
 	}
 	if book == nil {
 		return c.Response(http.StatusNotFound, map[string]any{"error": "book not found"})
 	}
+	detailLog.AddOutputRequest(node, cmd, "", "", book)
+	detailLog.End()
+	summaryLog.End("200", "")
 	return c.Response(http.StatusOK, book)
 }
 
 func (h *BookHandler) CreateBook(c kp.IContext) error {
+	node := "client"
+	cmd := "create_book"
+	detailLog, summaryLog := c.Log().NewLog("session:"+uuid.New().String(), "", "book")
+	detailLog.AddInputRequest(node, cmd, "", "", nil)
+	summaryLog.AddSuccess(node, cmd, "", "success")
+	defer detailLog.End()
+
 	var req Book
 	if err := c.ReadInput(&req); err != nil {
 		return c.Response(http.StatusBadRequest, map[string]any{"error": "invalid request"})
 	}
-	err := h.svc.CreateBook(c.Context(), &req)
+	err := h.svc.CreateBook(c.Context(), &req, detailLog, summaryLog)
 	if err != nil {
 		return c.Response(http.StatusInternalServerError, map[string]any{"error": err.Error()})
 	}
+
+	detailLog.AddOutputRequest(node, cmd, "", "", req)
+	summaryLog.End("200", "")
 	return c.Response(http.StatusCreated, map[string]any{"message": "book created", "id": req.ID})
 }
 

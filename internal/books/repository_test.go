@@ -375,7 +375,7 @@ func TestSave(t *testing.T) {
 		mockDB := &MockDB{ExpectedID: "123", ShouldFail: false}
 		repo := NewPostgresBookRepository(mockDB)
 
-		err := repo.Save(context.Background(), &book)
+		err := repo.Save(context.Background(), &book, &logger.MockDetailLog{})
 
 		assert.NoError(t, err)
 		assert.Equal(t, "123", book.ID)
@@ -388,7 +388,7 @@ func TestSave(t *testing.T) {
 		mockDB := &MockDB{ShouldFail: true}
 		repo := NewPostgresBookRepository(mockDB)
 
-		err := repo.Save(context.Background(), &book)
+		err := repo.Save(context.Background(), &book, &logger.MockDetailLog{} )
 
 		assert.Error(t, err)
 	})
@@ -402,7 +402,7 @@ func TestGetByID(t *testing.T) {
 		}
 		repo := NewPostgresBookRepository(mockDB)
 
-		book, err := repo.GetByID(context.Background(), "123")
+		book, err := repo.GetByID(context.Background(), "123", &logger.MockDetailLog{})
 
 		assert.NoError(t, err)
 		assert.Equal(t, "123", book.ID)
@@ -412,7 +412,7 @@ func TestGetByID(t *testing.T) {
 		mockDB := &MockDB{ShouldFail: true}
 		repo := NewPostgresBookRepository(mockDB)
 
-		book, err := repo.GetByID(context.Background(), "123")
+		book, err := repo.GetByID(context.Background(), "123", &logger.MockDetailLog{})
 
 		assert.Error(t, err)
 		assert.Nil(t, book)
