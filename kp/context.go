@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/gin-gonic/gin"
+	"github.com/sing3demons/go-library-api/kp/logger"
 )
 
 type IContext interface {
@@ -18,6 +19,9 @@ type IContext interface {
 	Response(code int, data any) error
 
 	// SendMessage(topic string, payload any, opts ...OptionProducerMsg) (RecordMetadata, error)
+	CommonLog(cmd, initInvoke, scenario string)
+	DetailLog() logger.DetailLog
+	SummaryLog() logger.SummaryLog
 }
 
 type HandleFunc func(ctx IContext) error
@@ -27,15 +31,34 @@ type ServiceHandleFunc HandleFunc
 type Middleware func(HandleFunc) HandleFunc
 
 type HttpContext struct {
-	ctx *gin.Context
-	cfg *KafkaConfig
-	log ILogger
+	ctx        *gin.Context
+	cfg        *KafkaConfig
+	log        ILogger
+	detailLog  logger.DetailLog
+	summaryLog logger.SummaryLog
 }
 
 func newMuxContext(c *gin.Context, cfg *KafkaConfig, log ILogger) IContext {
 	ctx := InitSession(c.Request.Context(), log)
 	c.Request = c.Request.WithContext(ctx)
 	return &HttpContext{ctx: c, cfg: cfg, log: log}
+}
+
+func (c *HttpContext) CommonLog(cmd, initInvoke, scenario string) {
+	detailLog, summaryLog := c.Log().NewLog(c.ctx.Request.Context(), initInvoke, scenario)
+	// c.ctx.Request = c.ctx.Request.WithContext(context.WithValue(c.ctx.Request.Context(), key, c.log))
+
+	detailLog.AddInputHttpRequest("client", cmd, initInvoke, c.ctx.Request.Clone(c.ctx.Request.Context()), true)
+
+	c.detailLog = detailLog
+	c.summaryLog = summaryLog
+}
+
+func (c *HttpContext) DetailLog() logger.DetailLog {
+	return c.detailLog
+}
+func (c *HttpContext) SummaryLog() logger.SummaryLog {
+	return c.summaryLog
 }
 
 func (c *HttpContext) Context() context.Context {

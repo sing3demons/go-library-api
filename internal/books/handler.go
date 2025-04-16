@@ -69,7 +69,9 @@ func (h *BookHandler) GetAllBooks(c kp.IContext) error {
 	node := "client"
 	cmd := "get_books"
 
-	detailLog, summaryLog := c.Log().NewLog(c.Context(), "", "book")
+	// detailLog, summaryLog := c.Log().NewLog(c.Context(), "", "book")
+	c.CommonLog(cmd, "", "book")
+
 	filter := map[string]any{}
 
 	if c.Query("id") != "" {
@@ -80,22 +82,20 @@ func (h *BookHandler) GetAllBooks(c kp.IContext) error {
 		filter["title"] = c.Query("title")
 	}
 
-	detailLog.AddInputRequest(node, cmd, "", "", filter)
-	summaryLog.AddSuccess(node, cmd, "", "success")
+	c.SummaryLog().AddSuccess(node, cmd, "", "success")
 
-	books, err := h.svc.GetAllBooks(c.Context(), filter, detailLog, summaryLog)
+	books, err := h.svc.GetAllBooks(c, filter)
 	if err != nil {
 		msg := map[string]string{
 			"error": err.Error(),
 		}
-		detailLog.AddOutputRequest(node, cmd, "", "", msg)
-		summaryLog.AddError(node, cmd, "", "")
+		c.DetailLog().AddOutputRequest(node, cmd, "", "", msg)
+		c.SummaryLog().AddError(node, cmd, "", "")
 
 		return c.Response(http.StatusInternalServerError, msg)
 	}
-	detailLog.AddOutputRequest(node, cmd, "", "", books)
+	c.DetailLog().AddOutputRequest(node, cmd, "", "", books)
 
-	detailLog.End()
-	summaryLog.End("200", "")
+	c.SummaryLog().End("200", "")
 	return c.Response(http.StatusOK, books)
 }

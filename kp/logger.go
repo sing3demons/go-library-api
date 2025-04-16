@@ -232,7 +232,7 @@ func (l *Logger) NewLog(c context.Context, initInvoke, scenario string) (detailL
 		l.ctx = context.WithValue(l.ctx, xSession, session)
 	}
 
-	detailLog = logger.NewDetailLog(session, initInvoke, scenario, false)
+	detailLog = logger.NewDetailLog(session, initInvoke, scenario, true)
 	summaryLog = logger.NewSummaryLog(session, initInvoke, scenario)
 	return detailLog, summaryLog
 }

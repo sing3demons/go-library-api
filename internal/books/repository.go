@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/sing3demons/go-library-api/kp"
 	"github.com/sing3demons/go-library-api/kp/logger"
 	"github.com/sing3demons/go-library-api/pkg/entities"
 	"github.com/sing3demons/go-library-api/pkg/postgres"
@@ -12,7 +13,7 @@ import (
 
 type BookRepository interface {
 	GetByID(ctx context.Context, id string, detailLog logger.DetailLog) (*Book, error)
-	GetALL(ctx context.Context, filter map[string]any, detailLog logger.DetailLog) ([]*Book, error)
+	GetALL(ctx kp.IContext, filter map[string]any) ([]*Book, error)
 	Save(ctx context.Context, book *Book, detailLog logger.DetailLog) error
 }
 
@@ -47,7 +48,7 @@ func (r *MongoBookRepository) Save(ctx context.Context, book *Book, detailLog lo
 
 	// fmt.Println("raw: ", result.RawData)
 	detailLog.AddOutputRequest(node_postgres, "create_book", fmt.Sprintf("pg-%s", time.Nanosecond.String()), result.RawData, result.Body)
-	detailLog.End()
+	// detailLog.End()
 	book.ID = result.Data.ID
 	book.Href = r.href(book.ID)
 	return nil
@@ -68,7 +69,7 @@ func (r *MongoBookRepository) GetByID(ctx context.Context, id string, detailLog 
 
 	// fmt.Println("RawData: ", result.RawData)
 	detailLog.AddOutputRequest(node_postgres, "get_book", fmt.Sprintf("pg-%s", time.Nanosecond.String()), result.RawData, result.Body)
-	detailLog.End()
+	// detailLog.End()
 
 	return &book, nil
 }
@@ -77,7 +78,7 @@ func (r *MongoBookRepository) href(id string) string {
 	return fmt.Sprintf("/books/%s", id)
 }
 
-func (r *MongoBookRepository) GetALL(ctx context.Context, filter map[string]interface{}, detailLog logger.DetailLog) ([]*Book, error) {
+func (r *MongoBookRepository) GetALL(ctx kp.IContext, filter map[string]interface{}) ([]*Book, error) {
 	var books []*Book
 	// rows, err := r.Db.QueryContext(ctx, "SELECT id, title, author FROM books")
 	// if err != nil {
@@ -105,7 +106,7 @@ func (r *MongoBookRepository) GetALL(ctx context.Context, filter map[string]inte
 		}
 		books = append(books, &book)
 	}
-	detailLog.AddOutputRequest(node_postgres, "get_book", fmt.Sprintf("pg-%s", time.Nanosecond.String()), result.RawData, result.Body)
-	detailLog.End()
+	ctx.DetailLog().AddOutputRequest(node_postgres, "get_book", fmt.Sprintf("pg-%s", time.Nanosecond.String()), result.RawData, result.Body)
+	// detailLog.End()
 	return books, nil
 }

@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/IBM/sarama"
+	"github.com/sing3demons/go-library-api/kp/logger"
 )
 
 type kafkaContext struct {
@@ -17,6 +18,9 @@ type kafkaContext struct {
 	producer sarama.SyncProducer
 	Logger   ILogger
 	ctx      context.Context
+
+	detailLog  logger.DetailLog
+	summaryLog logger.SummaryLog
 }
 
 type OptionProducerMsg struct {
@@ -96,6 +100,20 @@ func (ctx *kafkaContext) GetHeader(key string) string {
 		return ""
 	}
 	return ctx.headers[key]
+}
+
+func (c *kafkaContext) CommonLog(cmd, initInvoke, scenario string) {
+	detailLog, summaryLog := c.Log().NewLog(c.ctx, initInvoke, scenario)
+
+	c.detailLog = detailLog
+	c.summaryLog = summaryLog
+}
+
+func (ctx *kafkaContext) DetailLog() logger.DetailLog {
+	return ctx.detailLog
+}
+func (ctx *kafkaContext) SummaryLog() logger.SummaryLog {
+	return ctx.summaryLog
 }
 
 func (ctx *kafkaContext) ReadInput(data any) error {
