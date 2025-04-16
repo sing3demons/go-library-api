@@ -36,6 +36,8 @@ type HttpContext struct {
 	log        ILogger
 	detailLog  logger.DetailLog
 	summaryLog logger.SummaryLog
+	baseCommand string
+	initInvoke string
 }
 
 func newMuxContext(c *gin.Context, cfg *KafkaConfig, log ILogger) IContext {
@@ -49,6 +51,8 @@ func (c *HttpContext) CommonLog(cmd, initInvoke, scenario string) {
 	// c.ctx.Request = c.ctx.Request.WithContext(context.WithValue(c.ctx.Request.Context(), key, c.log))
 
 	detailLog.AddInputHttpRequest("client", cmd, initInvoke, c.ctx.Request.Clone(c.ctx.Request.Context()), true)
+	c.baseCommand = cmd
+	c.initInvoke = initInvoke
 
 	c.detailLog = detailLog
 	c.summaryLog = summaryLog
@@ -98,6 +102,8 @@ func (c *HttpContext) Response(responseCode int, responseData any) error {
 
 	// return json.NewEncoder(c.w).Encode(responseData)
 	c.ctx.JSON(responseCode, responseData)
+	c.detailLog.AddOutputRequest("client", c.baseCommand, c.initInvoke, responseData, responseData)
+	c = nil
 	return nil
 
 }

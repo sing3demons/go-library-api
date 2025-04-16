@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/sing3demons/go-library-api/kp"
 	"github.com/sing3demons/go-library-api/kp/logger"
 	"github.com/sing3demons/go-library-api/pkg/entities"
 	"github.com/sing3demons/go-library-api/pkg/postgres"
@@ -375,7 +376,7 @@ func TestSave(t *testing.T) {
 		mockDB := &MockDB{ExpectedID: "123", ShouldFail: false}
 		repo := NewPostgresBookRepository(mockDB)
 
-		err := repo.Save(context.Background(), &book, &logger.MockDetailLog{})
+		err := repo.Save(kp.NewMockMuxContext(), &book)
 
 		assert.NoError(t, err)
 		assert.Equal(t, "123", book.ID)
@@ -388,7 +389,7 @@ func TestSave(t *testing.T) {
 		mockDB := &MockDB{ShouldFail: true}
 		repo := NewPostgresBookRepository(mockDB)
 
-		err := repo.Save(context.Background(), &book, &logger.MockDetailLog{})
+		err := repo.Save(kp.NewMockMuxContext(), &book)
 
 		assert.Error(t, err)
 	})
@@ -419,45 +420,45 @@ func TestGetByID(t *testing.T) {
 	})
 }
 
-// func TestGetALL(t *testing.T) {
-// 	t.Run("should get all books", func(t *testing.T) {
-// 		mockDB := &MockDB{
-// 			ExpectedID: "123",
-// 			ShouldFail: false,
-// 			book:       &book,
-// 			next:       true,
-// 			books:      []Book{{ID: "456", Title: "Test Book 2", Author: "Test Author 2"}},
-// 		}
-// 		repo := NewPostgresBookRepository(mockDB)
+func TestGetALL(t *testing.T) {
+	t.Run("should get all books", func(t *testing.T) {
+		mockDB := &MockDB{
+			ExpectedID: "123",
+			ShouldFail: false,
+			book:       &book,
+			next:       true,
+			books:      []Book{{ID: "456", Title: "Test Book 2", Author: "Test Author 2"}},
+		}
+		repo := NewPostgresBookRepository(mockDB)
 
-// 		books, err := repo.GetALL(context.Background(), nil)
+		books, err := repo.GetALL(kp.NewMockMuxContext(), nil)
 
-// 		assert.NoError(t, err)
-// 		assert.NotEmpty(t, books)
-// 	})
+		assert.NoError(t, err)
+		assert.NotEmpty(t, books)
+	})
 
-// 	t.Run("should fail to get all books", func(t *testing.T) {
-// 		mockDB := &MockDB{ShouldFail: true}
-// 		repo := NewPostgresBookRepository(mockDB)
+	t.Run("should fail to get all books", func(t *testing.T) {
+		mockDB := &MockDB{ShouldFail: true}
+		repo := NewPostgresBookRepository(mockDB)
 
-// 		books, err := repo.GetALL(context.Background(), nil)
+		books, err := repo.GetALL(kp.NewMockMuxContext(), nil)
 
-// 		assert.Error(t, err)
-// 		assert.Nil(t, books)
-// 	})
+		assert.Error(t, err)
+		assert.Nil(t, books)
+	})
 
-// 	t.Run("should error scan", func(t *testing.T) {
-// 		mockDB := &MockDB{
-// 			ShouldFail: false,
-// 			book:       &book,
-// 			err:        errors.New(mockDatabaseError),
-// 		}
-// 		repo := NewPostgresBookRepository(mockDB)
+	t.Run("should error scan", func(t *testing.T) {
+		mockDB := &MockDB{
+			ShouldFail: false,
+			book:       &book,
+			err:        errors.New(mockDatabaseError),
+		}
+		repo := NewPostgresBookRepository(mockDB)
 
-// 		books, err := repo.GetALL(context.Background(), nil)
+		books, err := repo.GetALL(kp.NewMockMuxContext(), nil)
 
-// 		assert.Error(t, err)
-// 		assert.Nil(t, books)
-// 	})
+		assert.Error(t, err)
+		assert.Nil(t, books)
+	})
 
-// }
+}

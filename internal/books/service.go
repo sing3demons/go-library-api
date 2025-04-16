@@ -9,7 +9,7 @@ import (
 
 type BookService interface {
 	GetBook(ctx context.Context, id string, detailLog logger.DetailLog, summaryLog logger.SummaryLog) (*Book, error)
-	CreateBook(ctx context.Context, book *Book, detailLog logger.DetailLog, summaryLog logger.SummaryLog) error
+	CreateBook(ctx kp.IContext, book *Book) error
 	GetAllBooks(ctx kp.IContext, filter map[string]any) ([]*Book, error)
 }
 
@@ -36,17 +36,17 @@ func (s *bookService) GetBook(ctx context.Context, id string, detailLog logger.D
 	return result, nil
 }
 
-func (s *bookService) CreateBook(ctx context.Context, book *Book, detailLog logger.DetailLog, summaryLog logger.SummaryLog) error {
-	err := s.repo.Save(ctx, book, detailLog)
+func (s *bookService) CreateBook(ctx kp.IContext, book *Book) error {
+	err := s.repo.Save(ctx, book)
 	if err != nil {
-		detailLog.AddInputRequest(node_postgres, "create_book", "", err.Error(), map[string]string{
+		ctx.DetailLog().AddInputRequest(node_postgres, "create_book", "", err.Error(), map[string]string{
 			"error": err.Error(),
 		})
-		summaryLog.AddError(node_postgres, "create_book", "", err.Error())
+		ctx.SummaryLog().AddError(node_postgres, "create_book", "", err.Error())
 		return err
 	}
-	detailLog.AddInputRequest(node_postgres, "create_book", "", "", book)
-	summaryLog.AddSuccess(node_postgres, "create_book", "20000", "success")
+	ctx.DetailLog().AddInputRequest(node_postgres, "create_book", "", "", book)
+	ctx.SummaryLog().AddSuccess(node_postgres, "create_book", "20000", "success")
 	return nil
 }
 

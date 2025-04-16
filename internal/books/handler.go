@@ -38,30 +38,28 @@ func (h *BookHandler) GetBook(c kp.IContext) error {
 		return c.Response(http.StatusNotFound, map[string]any{"error": "book not found"})
 	}
 	detailLog.AddOutputRequest(node, cmd, "", "", book)
-	detailLog.End()
-	summaryLog.End("200", "")
+ 	summaryLog.End("200", "")
 	return c.Response(http.StatusOK, book)
 }
 
 func (h *BookHandler) CreateBook(c kp.IContext) error {
 	node := "client"
 	cmd := "create_book"
-	detailLog, summaryLog := c.Log().NewLog(c.Context(), "", "book")
-	detailLog.AddInputRequest(node, cmd, "", "", nil)
-	summaryLog.AddSuccess(node, cmd, "", "success")
-	defer detailLog.End()
-
+	// detailLog, summaryLog := c.Log().NewLog(c.Context(), "", "book")
+	// detailLog.AddInputRequest(node, cmd, "", "", nil)
+	c.CommonLog(cmd, "", "book")
+	c.SummaryLog().AddSuccess(node, cmd, "", "success")
+ 
 	var req Book
 	if err := c.ReadInput(&req); err != nil {
 		return c.Response(http.StatusBadRequest, map[string]any{"error": "invalid request"})
 	}
-	err := h.svc.CreateBook(c.Context(), &req, detailLog, summaryLog)
+	err := h.svc.CreateBook(c, &req)
 	if err != nil {
 		return c.Response(http.StatusInternalServerError, map[string]any{"error": err.Error()})
 	}
 
-	detailLog.AddOutputRequest(node, cmd, "", "", req)
-	summaryLog.End("200", "")
+	c.SummaryLog().End("200", "")
 	return c.Response(http.StatusCreated, map[string]any{"message": "book created", "id": req.ID})
 }
 
@@ -89,12 +87,9 @@ func (h *BookHandler) GetAllBooks(c kp.IContext) error {
 		msg := map[string]string{
 			"error": err.Error(),
 		}
-		c.DetailLog().AddOutputRequest(node, cmd, "", "", msg)
 		c.SummaryLog().AddError(node, cmd, "", "")
-
 		return c.Response(http.StatusInternalServerError, msg)
 	}
-	c.DetailLog().AddOutputRequest(node, cmd, "", "", books)
 
 	c.SummaryLog().End("200", "")
 	return c.Response(http.StatusOK, books)

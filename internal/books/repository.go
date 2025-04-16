@@ -14,7 +14,7 @@ import (
 type BookRepository interface {
 	GetByID(ctx context.Context, id string, detailLog logger.DetailLog) (*Book, error)
 	GetALL(ctx kp.IContext, filter map[string]any) ([]*Book, error)
-	Save(ctx context.Context, book *Book, detailLog logger.DetailLog) error
+	Save(ctx kp.IContext, book *Book) error
 }
 
 type MongoBookRepository struct {
@@ -29,7 +29,7 @@ const (
 	node_postgres = "postgres"
 )
 
-func (r *MongoBookRepository) Save(ctx context.Context, book *Book, detailLog logger.DetailLog) error {
+func (r *MongoBookRepository) Save(ctx kp.IContext, book *Book) error {
 	// var lastInsertId string
 	// err := r.Db.QueryRowContext(ctx, "INSERT INTO books (title, author) VALUES ($1, $2) RETURNING id", book.Title, book.Author).Scan(&lastInsertId)
 	// if err != nil {
@@ -42,12 +42,13 @@ func (r *MongoBookRepository) Save(ctx context.Context, book *Book, detailLog lo
 		Title:  book.Title,
 		Author: book.Author,
 	})
+	ctx.DetailLog().AddOutputRequest(node_postgres, "create_book", fmt.Sprintf("pg-%s", time.Nanosecond.String()), result.RawData, result.Body)
+
 	if err != nil {
 		return err
 	}
 
 	// fmt.Println("raw: ", result.RawData)
-	detailLog.AddOutputRequest(node_postgres, "create_book", fmt.Sprintf("pg-%s", time.Nanosecond.String()), result.RawData, result.Body)
 	// detailLog.End()
 	book.ID = result.Data.ID
 	book.Href = r.href(book.ID)
