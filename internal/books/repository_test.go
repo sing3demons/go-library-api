@@ -375,7 +375,9 @@ func TestSave(t *testing.T) {
 		mockDB := &MockDB{ExpectedID: "123", ShouldFail: false}
 		repo := NewPostgresBookRepository(mockDB)
 
-		err := repo.Save(kp.NewMockContext(), &book)
+		ctx := kp.NewMockContext()
+		err := repo.Save(ctx, &book)
+		ctx.Verify(t)
 
 		assert.NoError(t, err)
 		assert.Equal(t, "123", book.ID)
@@ -387,8 +389,9 @@ func TestSave(t *testing.T) {
 	t.Run("should fail to save a book", func(t *testing.T) {
 		mockDB := &MockDB{ShouldFail: true}
 		repo := NewPostgresBookRepository(mockDB)
-
-		err := repo.Save(kp.NewMockContext(), &book)
+		ctx := kp.NewMockContext()
+		err := repo.Save(ctx, &book)
+		ctx.Verify(t)
 
 		assert.Error(t, err)
 	})

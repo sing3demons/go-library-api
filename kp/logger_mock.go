@@ -5,13 +5,16 @@ import (
 )
 
 type MockLogger struct {
-	Called    bool
-	SessionID string
-	Calls     []string
+	Called        bool
+	SessionID     string
+	Calls         []string
+	methodsToCall map[string]bool
 }
 
 func NewMockLogger() *MockLogger {
-	return &MockLogger{}
+	return &MockLogger{
+		methodsToCall: make(map[string]bool),
+	}
 }
 func (m *MockLogger) Sync() error                          { m.Calls = append(m.Calls, "Sync"); return nil }
 func (m *MockLogger) Debug(args ...any)                    { m.Calls = append(m.Calls, "Debug") }
@@ -37,12 +40,6 @@ func (m *MockLogger) Session(v string) ILogger {
 	m.Calls = append(m.Calls, "Session")
 	return m
 }
-
-// func (m *MockLogger) NewLog(c context.Context, initInvoke, scenario string) (logger.DetailLog, logger.SummaryLog) {
-// 	d := &logger.MockDetailLog{}
-// 	s := &logger.MockSummaryLog{}
-// 	return d, s
-// }
 
 func (m *MockLogger) L(c context.Context) ILogger {
 	return &MockLogger{}
