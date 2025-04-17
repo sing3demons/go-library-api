@@ -26,10 +26,13 @@ func (h *UserHandler) RegisterUser(c kp.IContext) error {
 		Name  string `json:"name"`
 		Email string `json:"email"`
 	}
+	cmd := "register_user"
+	invoke := "register_user"
+	c.CommonLog(cmd, invoke, "register_user")
 	if err := c.ReadInput(&req); err != nil {
 		return c.Response(fiber.StatusBadRequest, map[string]any{"error": "invalid request"})
 	}
-	user, err := h.svc.RegisterUser(c.Context(), req.Name, req.Email)
+	user, err := h.svc.RegisterUser(c, req.Name, req.Email)
 	if err != nil {
 		return c.Response(http.StatusConflict, map[string]any{"error": err.Error()})
 	}
@@ -37,8 +40,12 @@ func (h *UserHandler) RegisterUser(c kp.IContext) error {
 }
 
 func (h *UserHandler) GetUser(c kp.IContext) error {
+	cmd := "get_user"
+	invoke := "get_user_by_id"
+
+	c.CommonLog(cmd, invoke, "get_user_by_id")
 	id := c.Param("id")
-	book, err := h.svc.GetUserById(c.Context(), id)
+	book, err := h.svc.GetUserById(c, id)
 	if err != nil {
 		return c.Response(http.StatusInternalServerError, map[string]any{"error": err.Error()})
 	}
@@ -49,7 +56,10 @@ func (h *UserHandler) GetUser(c kp.IContext) error {
 }
 
 func (h *UserHandler) GetAllUsers(c kp.IContext) error {
-	users, err := h.svc.GetAllUsers(c.Context())
+	cmd := "get_all_users"
+	invoke := "get_all_users"
+	c.CommonLog(cmd, invoke, "get_all_users")
+	users, err := h.svc.GetAllUsers(c)
 	if err != nil {
 		return c.Response(http.StatusInternalServerError, map[string]any{"error": err.Error()})
 	}

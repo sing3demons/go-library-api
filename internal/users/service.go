@@ -1,13 +1,13 @@
 package users
 
 import (
-	"context"
+	"github.com/sing3demons/go-library-api/kp"
 )
 
 type UserService interface {
-	RegisterUser(ctx context.Context, name, email string) (*User, error)
-	GetUserById(ctx context.Context, id string) (*User, error)
-	GetAllUsers(ctx context.Context) ([]*User, error)
+	RegisterUser(ctx kp.IContext, name, email string) (*User, error)
+	GetUserById(ctx kp.IContext, id string) (*User, error)
+	GetAllUsers(ctx kp.IContext) ([]*User, error)
 }
 
 type userService struct {
@@ -18,7 +18,7 @@ func NewUserService(repo UserRepository) UserService {
 	return &userService{repo: repo}
 }
 
-func (s *userService) RegisterUser(ctx context.Context, name, email string) (*User, error) {
+func (s *userService) RegisterUser(ctx kp.IContext, name, email string) (*User, error) {
 	user := &User{Name: name, Email: email}
 	if err := s.repo.Save(ctx, user); err != nil {
 		return nil, err
@@ -26,11 +26,11 @@ func (s *userService) RegisterUser(ctx context.Context, name, email string) (*Us
 	return user, nil
 }
 
-func (s *userService) GetUserById(ctx context.Context, id string) (*User, error) {
+func (s *userService) GetUserById(ctx kp.IContext, id string) (*User, error) {
 	return s.repo.GetByID(ctx, id)
 }
 
-func (s *userService) GetAllUsers(ctx context.Context) ([]*User, error) {
+func (s *userService) GetAllUsers(ctx kp.IContext) ([]*User, error) {
 	return s.repo.GetALL(ctx, nil)
 }
 

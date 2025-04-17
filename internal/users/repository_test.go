@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/sing3demons/go-library-api/kp"
 	"github.com/sing3demons/go-library-api/pkg/entities"
 	m "github.com/sing3demons/go-library-api/pkg/mongo"
 	"github.com/stretchr/testify/assert"
@@ -192,6 +193,7 @@ const (
 
 func TestSave(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
+		ctx := kp.NewMockContext()
 		mockCol := MockCollection{
 			InsertedID: mockID,
 			Err:        nil,
@@ -203,13 +205,15 @@ func TestSave(t *testing.T) {
 			Email: mockEmail,
 		}
 
-		err := repo.Save(context.TODO(), user)
+		err := repo.Save(ctx, user)
 
 		assert.NoError(t, err)
 		assert.Equal(t, mockCol.InsertedID, user.ID)
+		ctx.Verify(t)
 	})
 
 	t.Run("error", func(t *testing.T) {
+		ctx := kp.NewMockContext()
 		mockCol := MockCollection{
 			InsertedID: "",
 			Err:        mongo.ErrClientDisconnected,
@@ -221,10 +225,11 @@ func TestSave(t *testing.T) {
 			Email: mockEmail,
 		}
 
-		err := repo.Save(context.TODO(), user)
+		err := repo.Save(ctx, user)
 
 		assert.Error(t, err)
 		assert.Equal(t, "", user.ID)
+		ctx.Verify(t)
 	})
 }
 
@@ -235,13 +240,15 @@ func TestGetByID(t *testing.T) {
 		Email: mockEmail,
 	}
 	t.Run("success", func(t *testing.T) {
+		ctx := kp.NewMockContext()
+		defer ctx.Verify(t)
 		mockCol := MockCollection{
 			Err:  nil,
 			User: &user,
 		}
 		repo := NewMongoUserRepository(&mockCol)
 
-		result, err := repo.GetByID(context.TODO(), mockCol.InsertedID)
+		result, err := repo.GetByID(ctx, mockCol.InsertedID)
 
 		assert.NoError(t, err)
 		assert.Equal(t, result.ID, mockID)
@@ -250,13 +257,15 @@ func TestGetByID(t *testing.T) {
 	})
 
 	t.Run("error", func(t *testing.T) {
+		ctx := kp.NewMockContext()
+		defer ctx.Verify(t)
 		mockCol := MockCollection{
 			Err:  mongo.ErrClientDisconnected,
 			User: nil,
 		}
 		repo := NewMongoUserRepository(&mockCol)
 
-		result, err := repo.GetByID(context.TODO(), mockCol.InsertedID)
+		result, err := repo.GetByID(ctx, mockCol.InsertedID)
 
 		assert.Error(t, err)
 		assert.Nil(t, result)
@@ -272,13 +281,15 @@ func TestGetAll(t *testing.T) {
 	}}
 
 	t.Run("success", func(t *testing.T) {
+		ctx := kp.NewMockContext()
+		defer ctx.Verify(t)
 		mockCol := MockCollection{
 			Err:   nil,
 			Users: users,
 		}
 		repo := NewMongoUserRepository(&mockCol)
 
-		result, err := repo.GetALL(context.TODO(), bson.M{
+		result, err := repo.GetALL(ctx, bson.M{
 			"name": mockName,
 		})
 
@@ -288,19 +299,23 @@ func TestGetAll(t *testing.T) {
 	})
 
 	t.Run("error", func(t *testing.T) {
+		ctx := kp.NewMockContext()
+		defer ctx.Verify(t)
 		mockCol := MockCollection{
 			Err:   mongo.ErrNilCursor,
 			Users: nil,
 		}
 		repo := NewMongoUserRepository(&mockCol)
 
-		result, err := repo.GetALL(context.TODO(), bson.M{})
+		result, err := repo.GetALL(ctx, bson.M{})
 
 		assert.Error(t, err)
 		assert.Nil(t, result)
 	})
 
 	t.Run("error decode", func(t *testing.T) {
+		ctx := kp.NewMockContext()
+		defer ctx.Verify(t)
 		mockCol := MockCollection{
 			Err:   mongo.ErrNilCursor,
 			Users: users,
@@ -308,7 +323,7 @@ func TestGetAll(t *testing.T) {
 		}
 		repo := NewMongoUserRepository(&mockCol)
 
-		result, err := repo.GetALL(context.TODO(), bson.M{})
+		result, err := repo.GetALL(ctx, bson.M{})
 
 		assert.Error(t, err)
 		assert.Nil(t, result)

@@ -377,7 +377,7 @@ func TestSave(t *testing.T) {
 
 		ctx := kp.NewMockContext()
 		err := repo.Save(ctx, &book)
-		ctx.Verify(t)
+		defer ctx.Verify(t)
 
 		assert.NoError(t, err)
 		assert.Equal(t, "123", book.ID)

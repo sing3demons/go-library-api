@@ -255,8 +255,10 @@ func (m *MockContext) ExpectToCall(methodName string) {
 
 func (m *MockContext) Verify(t *testing.T) {
 	for methodName, called := range m.methodsToCall {
+		t.Logf("Verifying method '%s'", methodName)
 		if !called {
 			t.Errorf("Expected to call '%s', but it wasn't.", methodName)
 		}
 	}
+	m = nil
 }

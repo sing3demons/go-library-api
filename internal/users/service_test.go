@@ -1,12 +1,12 @@
 package users_test
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"testing"
 
 	"github.com/sing3demons/go-library-api/internal/users"
+	"github.com/sing3demons/go-library-api/kp"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -15,12 +15,12 @@ type MockUserRepository struct {
 }
 
 type UserRepository interface {
-	Save(ctx context.Context, user *users.User) error
-	GetByID(ctx context.Context, id string) (*users.User, error)
-	GetALL(ctx context.Context, filter map[string]interface{}) ([]*users.User, error)
+	Save(ctx kp.IContext, user *users.User) error
+	GetByID(ctx kp.IContext, id string) (*users.User, error)
+	GetALL(ctx kp.IContext, filter map[string]any) ([]*users.User, error)
 }
 
-func (m *MockUserRepository) Save(ctx context.Context, user *users.User) error {
+func (m *MockUserRepository) Save(ctx kp.IContext, user *users.User) error {
 	if m.Err != nil {
 		return m.Err
 	}
@@ -29,7 +29,7 @@ func (m *MockUserRepository) Save(ctx context.Context, user *users.User) error {
 	return nil
 }
 
-func (m *MockUserRepository) GetByID(ctx context.Context, id string) (*users.User, error) {
+func (m *MockUserRepository) GetByID(ctx kp.IContext, id string) (*users.User, error) {
 	if m.Err != nil {
 		return nil, m.Err
 	}
@@ -40,7 +40,7 @@ func (m *MockUserRepository) GetByID(ctx context.Context, id string) (*users.Use
 	}, nil
 }
 
-func (m *MockUserRepository) GetALL(ctx context.Context, filter map[string]interface{}) ([]*users.User, error) {
+func (m *MockUserRepository) GetALL(ctx kp.IContext, filter map[string]any) ([]*users.User, error) {
 	if m.Err != nil {
 		return nil, m.Err
 	}
@@ -62,11 +62,13 @@ const (
 
 func TestUserServiceRegisterUser(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
+		ctx := kp.NewMockContext()
+		defer ctx.Verify(t)
 		mockRepo := MockUserRepository{}
 
 		service := users.NewUserService(&mockRepo)
 
-		user, err := service.RegisterUser(context.TODO(), mockName, mockEmail)
+		user, err := service.RegisterUser(ctx, mockName, mockEmail)
 
 		assert.NoError(t, err)
 		assert.NotEmpty(t, user.ID)
@@ -75,13 +77,15 @@ func TestUserServiceRegisterUser(t *testing.T) {
 	})
 
 	t.Run("error", func(t *testing.T) {
+		ctx := kp.NewMockContext()
+		defer ctx.Verify(t)
 		mockRepo := MockUserRepository{
 			Err: errors.New("error"),
 		}
 
 		service := users.NewUserService(&mockRepo)
 
-		user, err := service.RegisterUser(context.TODO(), mockName, mockEmail)
+		user, err := service.RegisterUser(ctx, mockName, mockEmail)
 
 		assert.Error(t, err)
 		assert.Nil(t, user)
@@ -90,11 +94,13 @@ func TestUserServiceRegisterUser(t *testing.T) {
 
 func TestUserServiceGetUserById(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
+		ctx := kp.NewMockContext()
+		defer ctx.Verify(t)
 		mockRepo := MockUserRepository{}
 
 		service := users.NewUserService(&mockRepo)
 
-		user, err := service.GetUserById(context.TODO(), mockID)
+		user, err := service.GetUserById(ctx, mockID)
 
 		assert.NoError(t, err)
 		assert.NotEmpty(t, user.ID)
@@ -103,13 +109,15 @@ func TestUserServiceGetUserById(t *testing.T) {
 	})
 
 	t.Run("error", func(t *testing.T) {
+		ctx := kp.NewMockContext()
+		defer ctx.Verify(t)
 		mockRepo := MockUserRepository{
 			Err: errors.New("error"),
 		}
 
 		service := users.NewUserService(&mockRepo)
 
-		user, err := service.GetUserById(context.TODO(), mockID)
+		user, err := service.GetUserById(ctx, mockID)
 
 		assert.Error(t, err)
 		assert.Nil(t, user)
@@ -118,11 +126,13 @@ func TestUserServiceGetUserById(t *testing.T) {
 
 func TestUserServiceGetAllUsers(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
+		ctx := kp.NewMockContext()
+		defer ctx.Verify(t)
 		mockRepo := MockUserRepository{}
 
 		service := users.NewUserService(&mockRepo)
 
-		users, err := service.GetAllUsers(context.TODO())
+		users, err := service.GetAllUsers(ctx)
 
 		assert.NoError(t, err)
 		assert.NotEmpty(t, users)
@@ -133,13 +143,15 @@ func TestUserServiceGetAllUsers(t *testing.T) {
 	})
 
 	t.Run("error", func(t *testing.T) {
+		ctx := kp.NewMockContext()
+		defer ctx.Verify(t)
 		mockRepo := MockUserRepository{
 			Err: errors.New("error"),
 		}
 
 		service := users.NewUserService(&mockRepo)
 
-		users, err := service.GetAllUsers(context.TODO())
+		users, err := service.GetAllUsers(ctx)
 
 		assert.Error(t, err)
 		assert.Nil(t, users)
