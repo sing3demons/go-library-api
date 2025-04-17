@@ -376,7 +376,7 @@ func TestSave(t *testing.T) {
 		mockDB := &MockDB{ExpectedID: "123", ShouldFail: false}
 		repo := NewPostgresBookRepository(mockDB)
 
-		err := repo.Save(kp.NewMockMuxContext(), &book)
+		err := repo.Save(kp.NewMockContext(), &book)
 
 		assert.NoError(t, err)
 		assert.Equal(t, "123", book.ID)
@@ -389,7 +389,7 @@ func TestSave(t *testing.T) {
 		mockDB := &MockDB{ShouldFail: true}
 		repo := NewPostgresBookRepository(mockDB)
 
-		err := repo.Save(kp.NewMockMuxContext(), &book)
+		err := repo.Save(kp.NewMockContext(), &book)
 
 		assert.Error(t, err)
 	})
@@ -431,7 +431,7 @@ func TestGetALL(t *testing.T) {
 		}
 		repo := NewPostgresBookRepository(mockDB)
 
-		books, err := repo.GetALL(kp.NewMockMuxContext(), nil)
+		books, err := repo.GetALL(kp.NewMockContext(), nil)
 
 		assert.NoError(t, err)
 		assert.NotEmpty(t, books)
@@ -441,7 +441,7 @@ func TestGetALL(t *testing.T) {
 		mockDB := &MockDB{ShouldFail: true}
 		repo := NewPostgresBookRepository(mockDB)
 
-		books, err := repo.GetALL(kp.NewMockMuxContext(), nil)
+		books, err := repo.GetALL(kp.NewMockContext(), nil)
 
 		assert.Error(t, err)
 		assert.Nil(t, books)
@@ -455,7 +455,7 @@ func TestGetALL(t *testing.T) {
 		}
 		repo := NewPostgresBookRepository(mockDB)
 
-		books, err := repo.GetALL(kp.NewMockMuxContext(), nil)
+		books, err := repo.GetALL(kp.NewMockContext(), nil)
 
 		assert.Error(t, err)
 		assert.Nil(t, books)

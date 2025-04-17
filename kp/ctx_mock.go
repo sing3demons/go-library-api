@@ -1,161 +1,112 @@
 package kp
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
+	"errors"
 	"net/http"
-	"net/http/httptest"
-	"net/url"
 
 	"github.com/sing3demons/go-library-api/kp/logger"
-	"github.com/stretchr/testify/mock"
 )
 
-type FakeHttpContext struct {
-	Res *httptest.ResponseRecorder
-	Req *http.Request
-	cfg *KafkaConfig
-	log ILogger
+func (m *MockLogger) NewLog(ctx context.Context, initInvoke, scenario string) (logger.DetailLog, logger.SummaryLog) {
+	return &MockDetailLog{}, &logger.MockSummaryLog{}
 }
 
-type Option struct {
-	Body   any
-	Query  map[string]string
-	Params map[string]string
-	Header map[string]string
+// Mock implementations for DetailLog and SummaryLog
+type MockDetailLog struct{}
+
+func (m *MockDetailLog) IsRawDataEnabled() bool {
+	return false
 }
 
-func NewMockMuxContext(opts ...Option) *FakeHttpContext {
-	opt := &Option{}
-	if len(opts) > 0 {
-		opt = &opts[0]
+func (m *MockDetailLog) AddInputRequest(node, cmd, invoke string, rawData, data any) {}
+
+func (m *MockDetailLog) AddInputHttpRequest(node, cmd, invoke string, req *http.Request, rawData bool) {
+}
+
+func (m *MockDetailLog) AddOutputRequest(node, cmd, invoke string, rawData, data any) {}
+
+func (m *MockDetailLog) End() {}
+
+func (m *MockDetailLog) AddInputResponse(node, cmd, invoke string, rawData, data any, protocol, protocolMethod string) {
+}
+
+func (m *MockDetailLog) AddOutputResponse(node, cmd, invoke string, rawData, data any) {}
+
+func (m *MockDetailLog) AutoEnd() bool {
+	return true
+}
+
+type MockSummaryLog struct{}
+
+type MockContext struct {
+	Ctx         context.Context
+	Headers     map[string]string
+	QueryParams map[string]string
+	Params      map[string]string
+	Input       any
+	Output      any
+	LogInstance ILogger
+}
+
+func NewMockContext() *MockContext {
+	return &MockContext{
+		Ctx:         context.Background(),
+		Headers:     make(map[string]string),
+		QueryParams: make(map[string]string),
+		Params:      make(map[string]string),
+		LogInstance: &MockLogger{},
 	}
+}
 
-	// Create request
-	var buf *bytes.Buffer
-	if opt.Body != nil {
-		jsonData, _ := json.Marshal(opt.Body)
-		buf = bytes.NewBuffer(jsonData)
-	} else {
-		buf = &bytes.Buffer{}
+func (m *MockContext) Context() context.Context {
+	return m.Ctx
+}
+
+func (m *MockContext) SetHeader(key, value string) {
+	m.Headers[key] = value
+}
+
+func (m *MockContext) GetHeader(key string) string {
+	return m.Headers[key]
+}
+
+func (m *MockContext) Log() ILogger {
+	return m.LogInstance
+}
+
+func (m *MockContext) Param(name string) string {
+	return m.Params[name]
+}
+
+func (m *MockContext) Query(name string) string {
+	return m.QueryParams[name]
+}
+
+func (m *MockContext) ReadInput(data any) error {
+	if m.Input == nil {
+		return errors.New("no input set")
 	}
-
-	req := httptest.NewRequest(http.MethodOptions, "/api", buf)
-
-	if opt.Query != nil {
-		u := url.Values{}
-		for k, v := range opt.Query {
-			u.Set(k, v)
+	// Simulate decoding input
+	switch v := data.(type) {
+	case *string:
+		if s, ok := m.Input.(string); ok {
+			*v = s
+			return nil
 		}
-		req.URL.RawQuery = u.Encode()
 	}
-
-	if opt.Params != nil {
-		ctx := req.Context()
-		for k, v := range opt.Params {
-			ctx = context.WithValue(ctx, ContextKey(k), v)
-		}
-		req = req.WithContext(ctx)
-	}
-
-	if opt.Header != nil {
-		for k, v := range opt.Header {
-			req.Header.Set(k, v)
-		}
-	} else {
-		req.Header.Set("Content-Type", "application/json")
-	}
-
-	// Create response recorder
-	rec := httptest.NewRecorder()
-
-	// Create mock dependencies
-	mockCfg := &KafkaConfig{}
-	mockLog := NewMockLogger()
-
-	return &FakeHttpContext{
-		Res: rec,
-		Req: req,
-		cfg: mockCfg,
-		log: mockLog,
-	}
+	return errors.New("type mismatch")
 }
 
-func (c *FakeHttpContext) Code() int {
-	return c.Res.Code
-}
-func (c *FakeHttpContext) Body(data any) error {
-	return json.NewDecoder(c.Res.Body).Decode(data)
+func (m *MockContext) Response(code int, data any) error {
+	m.Output = data
+	return nil
 }
 
-func (c *FakeHttpContext) Context() context.Context {
-	return c.Req.Context()
+func (m *MockContext) CommonLog(cmd, initInvoke, scenario string) {}
+func (m *MockContext) DetailLog() logger.DetailLog {
+	return &MockDetailLog{}
 }
-
-func (c *FakeHttpContext) SendMessage(topic string, message any, opts ...OptionProducerMsg) (RecordMetadata, error) {
-	return RecordMetadata{
-		TopicName: topic,
-		Offset:    0,
-		Partition: 0,
-	}, nil
-}
-
-func (c *FakeHttpContext) Log() ILogger {
-	return c.log
-}
-
-func (c *FakeHttpContext) Query(name string) string {
-	return c.Req.URL.Query().Get(name)
-}
-
-func (c *FakeHttpContext) CommonLog(cmd, initInvoke, scenario string) {}
-func (c *FakeHttpContext) DetailLog() logger.DetailLog {
-	mockLog := new(logger.MockDetailLog)
-	mockLog.On("AddInputHttpRequest", "client", "cmd", "initInvoke", c.Req.Clone(c.Req.Context()), true)
-	mockLog.On("AddInputRequest", "client", "cmd", "initInvoke", nil, nil)
-	mockLog.On("AddInputResponse", "client", "cmd", "initInvoke", nil, nil, "", "")
-	mockLog.On("AddOutputResponse", "client", "cmd", "initInvoke", nil, nil)
-	mockLog.On("AddOutputRequest", "client", "cmd", "initInvoke", "", mock.Anything)
-
-	return mockLog
-}
-func (c *FakeHttpContext) SummaryLog() logger.SummaryLog {
+func (m *MockContext) SummaryLog() logger.SummaryLog {
 	return &logger.MockSummaryLog{}
-}
-
-func (c *FakeHttpContext) Param(name string) string {
-	v := c.Req.Context().Value(ContextKey(name))
-	var value string
-	switch v := v.(type) {
-	case string:
-		value = v
-	}
-	c.Req = c.Req.WithContext(context.WithValue(c.Req.Context(), ContextKey(name), nil))
-	return value
-}
-
-func (c *FakeHttpContext) ReadInput(data any) error {
-	return json.NewDecoder(c.Req.Body).Decode(data)
-}
-
-func (c *FakeHttpContext) Response(responseCode int, responseData any) error {
-	c.Res.Header().Set("Content-type", "application/json; charset=UTF8")
-
-	c.Res.WriteHeader(responseCode)
-
-	err := json.NewEncoder(c.Res).Encode(responseData)
-	return err
-}
-
-func (c *FakeHttpContext) SetHeader(key, value string) {
-	if value == "" {
-		c.Res.Header().Del(key)
-		return
-	}
-	c.Res.Header().Set(key, value)
-}
-
-func (c *FakeHttpContext) GetHeader(key string) string {
-	return c.Req.Header.Get(key)
 }
