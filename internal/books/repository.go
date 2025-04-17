@@ -1,18 +1,16 @@
 package books
 
 import (
-	"context"
 	"fmt"
 	"time"
 
 	"github.com/sing3demons/go-library-api/kp"
-	"github.com/sing3demons/go-library-api/kp/logger"
 	"github.com/sing3demons/go-library-api/pkg/entities"
 	"github.com/sing3demons/go-library-api/pkg/postgres"
 )
 
 type BookRepository interface {
-	GetByID(ctx context.Context, id string, detailLog logger.DetailLog) (*Book, error)
+	GetByID(ctx kp.IContext, id string) (*Book, error)
 	GetALL(ctx kp.IContext, filter map[string]any) ([]*Book, error)
 	Save(ctx kp.IContext, book *Book) error
 }
@@ -55,7 +53,7 @@ func (r *MongoBookRepository) Save(ctx kp.IContext, book *Book) error {
 	return nil
 }
 
-func (r *MongoBookRepository) GetByID(ctx context.Context, id string, detailLog logger.DetailLog) (*Book, error) {
+func (r *MongoBookRepository) GetByID(ctx kp.IContext, id string) (*Book, error) {
 	var book Book
 	// err := r.Db.QueryRowContext(ctx, "SELECT id, title, author FROM books WHERE id = $1", id).Scan(&book.ID, &book.Title, &book.Author)
 	result, err := r.Db.GetBookByID(id)
@@ -69,7 +67,7 @@ func (r *MongoBookRepository) GetByID(ctx context.Context, id string, detailLog 
 	book.Href = r.href(book.ID)
 
 	// fmt.Println("RawData: ", result.RawData)
-	detailLog.AddOutputRequest(node_postgres, "get_book", fmt.Sprintf("pg-%s", time.Nanosecond.String()), result.RawData, result.Body)
+	ctx.DetailLog().AddOutputRequest(node_postgres, "get_book", fmt.Sprintf("pg-%s", time.Nanosecond.String()), result.RawData, result.Body)
 	// detailLog.End()
 
 	return &book, nil

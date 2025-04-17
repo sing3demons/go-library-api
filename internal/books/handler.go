@@ -23,22 +23,23 @@ func (h *BookHandler) RegisterRoutes(r kp.IApplication) {
 func (h *BookHandler) GetBook(c kp.IContext) error {
 	node := "client"
 	cmd := "get_book"
-	logger := c.Log()
-	detailLog, summaryLog := logger.NewLog(c.Context(), "", "book")
+
+	c.CommonLog(cmd, "", "book")
+
+	// logger := c.Log()
+	// detailLog, summaryLog := logger.NewLog(c.Context(), "", "book")
 	id := c.Param("id")
 
-	detailLog.AddInputRequest(node, cmd, "", "", map[string]any{"id": id})
-	summaryLog.AddSuccess(node, cmd, "", "success")
+	c.SummaryLog().AddSuccess(node, cmd, "", "success")
 
-	book, err := h.svc.GetBook(c.Context(), id, detailLog, summaryLog)
+	book, err := h.svc.GetBook(c, id)
 	if err != nil {
 		return c.Response(http.StatusInternalServerError, map[string]any{"error": err.Error()})
 	}
 	if book == nil {
 		return c.Response(http.StatusNotFound, map[string]any{"error": "book not found"})
 	}
-	detailLog.AddOutputRequest(node, cmd, "", "", book)
- 	summaryLog.End("200", "")
+	c.SummaryLog().End("200", "")
 	return c.Response(http.StatusOK, book)
 }
 
@@ -49,7 +50,7 @@ func (h *BookHandler) CreateBook(c kp.IContext) error {
 	// detailLog.AddInputRequest(node, cmd, "", "", nil)
 	c.CommonLog(cmd, "", "book")
 	c.SummaryLog().AddSuccess(node, cmd, "", "success")
- 
+
 	var req Book
 	if err := c.ReadInput(&req); err != nil {
 		return c.Response(http.StatusBadRequest, map[string]any{"error": "invalid request"})

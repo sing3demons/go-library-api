@@ -10,7 +10,6 @@ import (
 	"testing"
 
 	"github.com/sing3demons/go-library-api/kp"
-	"github.com/sing3demons/go-library-api/kp/logger"
 	"github.com/sing3demons/go-library-api/pkg/entities"
 	"github.com/sing3demons/go-library-api/pkg/postgres"
 	"github.com/stretchr/testify/assert"
@@ -403,7 +402,7 @@ func TestGetByID(t *testing.T) {
 		}
 		repo := NewPostgresBookRepository(mockDB)
 
-		book, err := repo.GetByID(context.Background(), "123", &logger.MockDetailLog{})
+		book, err := repo.GetByID(kp.NewMockContext(), "123")
 
 		assert.NoError(t, err)
 		assert.Equal(t, "123", book.ID)
@@ -413,7 +412,7 @@ func TestGetByID(t *testing.T) {
 		mockDB := &MockDB{ShouldFail: true}
 		repo := NewPostgresBookRepository(mockDB)
 
-		book, err := repo.GetByID(context.Background(), "123", &logger.MockDetailLog{})
+		book, err := repo.GetByID(kp.NewMockContext(), "123")
 
 		assert.Error(t, err)
 		assert.Nil(t, book)
