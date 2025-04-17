@@ -82,7 +82,7 @@ func (m *MockDetailLog) ExpectToCall(methodName string) {
 func (m *MockDetailLog) Verify(t *testing.T) {
 	for methodName, called := range m.methodsToCall {
 		if !called {
-			t.Errorf("Expected to call '%s', but it wasn't.", methodName)
+			printError(t, methodName)
 		}
 	}
 }
@@ -123,7 +123,7 @@ func (m *MockSummaryLog) ExpectToCall(methodName string) {
 func (m *MockSummaryLog) Verify(t *testing.T) {
 	for methodName, called := range m.methodsToCall {
 		if !called {
-			t.Errorf("Expected to call '%s', but it wasn't.", methodName)
+			printError(t, methodName)
 		}
 	}
 }
@@ -257,8 +257,13 @@ func (m *MockContext) Verify(t *testing.T) {
 	for methodName, called := range m.methodsToCall {
 		t.Logf("Verifying method '%s'", methodName)
 		if !called {
-			t.Errorf("Expected to call '%s', but it wasn't.", methodName)
+			printError(t, methodName)
 		}
 	}
 	m = nil
+}
+
+func printError(t *testing.T, methodName string) {
+	t.Errorf("Expected to call '%s', but it wasn't.", methodName)
+
 }

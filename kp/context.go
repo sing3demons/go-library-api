@@ -2,6 +2,7 @@ package kp
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/gin-gonic/gin"
 	"github.com/sing3demons/go-library-api/kp/logger"
@@ -31,13 +32,13 @@ type ServiceHandleFunc HandleFunc
 type Middleware func(HandleFunc) HandleFunc
 
 type HttpContext struct {
-	ctx        *gin.Context
-	cfg        *KafkaConfig
-	log        ILogger
-	detailLog  logger.DetailLog
-	summaryLog logger.SummaryLog
+	ctx         *gin.Context
+	cfg         *KafkaConfig
+	log         ILogger
+	detailLog   logger.DetailLog
+	summaryLog  logger.SummaryLog
 	baseCommand string
-	initInvoke string
+	initInvoke  string
 }
 
 func newMuxContext(c *gin.Context, cfg *KafkaConfig, log ILogger) IContext {
@@ -103,6 +104,10 @@ func (c *HttpContext) Response(responseCode int, responseData any) error {
 	// return json.NewEncoder(c.w).Encode(responseData)
 	c.ctx.JSON(responseCode, responseData)
 	c.detailLog.AddOutputRequest("client", c.baseCommand, c.initInvoke, responseData, responseData)
+
+	if !c.summaryLog.IsEnd() {
+		c.summaryLog.End(fmt.Sprintf("%d", responseCode), "")
+	}
 	c = nil
 	return nil
 

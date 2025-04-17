@@ -24,7 +24,7 @@ func NewMongoUserRepository(col m.Collection) UserRepository {
 }
 
 const (
-	node_postgres = "postgres"
+	node_mongo = "mongo"
 )
 
 func (r *mongoUserRepository) Save(ctx kp.IContext, user *User) error {
@@ -39,17 +39,17 @@ func (r *mongoUserRepository) Save(ctx kp.IContext, user *User) error {
 		Email: user.Email,
 	}
 	result, err := r.col.CreateUser(body)
-	ctx.DetailLog().AddOutputRequest(node_postgres, cmd, fmt.Sprintf("pg-%s", user.ID), result.RawData, result.Body)
+	ctx.DetailLog().AddOutputRequest(node_mongo, cmd, fmt.Sprintf("pg-%s", user.ID), result.RawData, result.Body)
 	if err != nil {
-		ctx.DetailLog().AddOutputRequest(node_postgres, cmd, fmt.Sprintf("pg-%s", user.ID), "", map[string]string{
+		ctx.DetailLog().AddOutputRequest(node_mongo, cmd, fmt.Sprintf("pg-%s", user.ID), "", map[string]string{
 			"error": err.Error(),
 		})
-		ctx.SummaryLog().AddError(node_postgres, cmd, "", err.Error())
+		ctx.SummaryLog().AddError(node_mongo, cmd, "", err.Error())
 		return err
 	}
 
-	ctx.DetailLog().AddOutputRequest(node_postgres, cmd, fmt.Sprintf("pg-%s", user.ID), "", result.Data)
-	ctx.SummaryLog().AddSuccess(node_postgres, cmd, "20000", result.RawData)
+	ctx.DetailLog().AddOutputRequest(node_mongo, cmd, fmt.Sprintf("pg-%s", user.ID), "", result.Data)
+	ctx.SummaryLog().AddSuccess(node_mongo, cmd, "20000", result.RawData)
 
 	user.ID = result.Data.ID
 
@@ -100,9 +100,16 @@ func (r *mongoUserRepository) GetALL(ctx kp.IContext, filter map[string]interfac
 	// }
 
 	result, err := r.col.GetAllUsers(filter)
+	ctx.DetailLog().AddOutputRequest(node_mongo, "get_all_users", "", result.RawData, result.Body)
 	if err != nil {
+		ctx.DetailLog().AddInputRequest(node_mongo, "get_all_users", "", "", map[string]string{
+			"error": err.Error(),
+		})
+		ctx.SummaryLog().AddError(node_mongo, "get_all_users", "", err.Error())
 		return nil, err
 	}
+	ctx.DetailLog().AddInputRequest(node_mongo, "get_all_users", "", result.Data, result.Data)
+	ctx.SummaryLog().AddSuccess(node_mongo, "get_all_users", "20000", "success")
 	for _, u := range result.Data {
 		user := User{
 			ID:    u.ID,

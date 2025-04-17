@@ -59,6 +59,7 @@ func (h *UserHandler) GetAllUsers(c kp.IContext) error {
 	cmd := "get_all_users"
 	invoke := "get_all_users"
 	c.CommonLog(cmd, invoke, "get_all_users")
+	c.SummaryLog().AddSuccess("client", cmd, "", "success")
 	users, err := h.svc.GetAllUsers(c)
 	if err != nil {
 		return c.Response(http.StatusInternalServerError, map[string]any{"error": err.Error()})

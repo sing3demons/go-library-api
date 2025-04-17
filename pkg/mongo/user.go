@@ -41,7 +41,6 @@ func (m *mongoCollection) CreateUser(user *entities.User) (entities.ProcessData[
 	jsonDocumentBytes, _ := json.Marshal(user)
 	jsonDocument := strings.ReplaceAll(string(jsonDocumentBytes), `"`, "'")
 	result.RawData = fmt.Sprintf("%s.%s(%s)", result.Body.Collection, result.Body.Method, jsonDocument)
-	fmt.Println("RawData=========================> ", result.RawData)
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 
 	defer cancel()
@@ -65,7 +64,6 @@ func (m *mongoCollection) GetUserByID(id string) (entities.ProcessData[entities.
 	result.Body.Collection = "users"
 
 	result.RawData = fmt.Sprintf("users.findOne({_id: %s})", id)
-	fmt.Println("RawData=========================", result.RawData)
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
@@ -89,7 +87,6 @@ func (m *mongoCollection) GetAllUsers(filter map[string]any) (result entities.Pr
 	opt := &options.FindOptions{}
 
 	result.RawData = buildMongoRawData("users", bson.D{}, opt)
-	fmt.Println("RawData=========================", result.RawData)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
