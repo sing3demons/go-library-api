@@ -34,6 +34,7 @@ func TestMockLoggerAllMethods(t *testing.T) {
 	mock.Printf("print %s", "format")
 	mock.WithName("test-logger")
 	mock.Println("print line")
+	mock.L(context.TODO())
 
 	// Session() should return self
 	newLogger := mock.Session(mySession)
@@ -48,6 +49,7 @@ func TestMockLoggerAllMethods(t *testing.T) {
 	if mock.SessionID != mySession {
 		t.Errorf("expected SessionID to be 'my-session', got '%s'", mock.SessionID)
 	}
+	mock.Verify(t)
 }
 
 const (
@@ -57,7 +59,7 @@ const (
 
 func TestInitSessionGeneratesSessionIfMissing(t *testing.T) {
 	ctx := context.Background()
-	mock := &MockLogger{}
+	mock := NewMockLogger()
 	newCtx := InitSession(ctx, mock)
 
 	val := newCtx.Value(xSession)
@@ -74,10 +76,10 @@ func TestInitSessionGeneratesSessionIfMissing(t *testing.T) {
 		t.Errorf("expected session ID '%s', got '%s'", val, mock.SessionID)
 	}
 }
-
+ 
 func TestInitSessionUsesExistingSession(t *testing.T) {
 	ctx := context.WithValue(context.Background(), xSession, msgSession)
-	mock := &MockLogger{}
+	mock := NewMockLogger()
 	newCtx := InitSession(ctx, mock)
 
 	val := newCtx.Value(xSession)
