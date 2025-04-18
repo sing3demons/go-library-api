@@ -1,8 +1,11 @@
 package kp
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
 
 	"github.com/gin-gonic/gin"
 	"github.com/sing3demons/go-library-api/kp/logger"
@@ -39,6 +42,7 @@ type HttpContext struct {
 	summaryLog  logger.SummaryLog
 	baseCommand string
 	initInvoke  string
+	copyBody    []byte
 }
 
 func newMuxContext(c *gin.Context, cfg *KafkaConfig, log ILogger) IContext {
@@ -48,8 +52,15 @@ func newMuxContext(c *gin.Context, cfg *KafkaConfig, log ILogger) IContext {
 }
 
 func (c *HttpContext) CommonLog(cmd, initInvoke, scenario string) {
+	bodyBytes, _ := io.ReadAll(c.ctx.Request.Body)
+	c.ctx.Request.Body.Close()
+	c.copyBody = bodyBytes
+	// Restore body for both original and clone
+	c.ctx.Request.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+	clonedReq := c.ctx.Request.Clone(c.ctx.Request.Context())
+	clonedReq.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+
 	detailLog, summaryLog := c.Log().NewLog(c.ctx.Request.Context(), initInvoke, scenario)
-	// c.ctx.Request = c.ctx.Request.WithContext(context.WithValue(c.ctx.Request.Context(), key, c.log))
 
 	detailLog.AddInputHttpRequest("client", cmd, initInvoke, c.ctx.Request.Clone(c.ctx.Request.Context()), true)
 	c.baseCommand = cmd
@@ -92,8 +103,20 @@ func (c *HttpContext) Param(name string) string {
 }
 
 func (c *HttpContext) ReadInput(data any) error {
-	// return json.NewDecoder(c.r.Body).Decode(data)
-	return c.ctx.BindJSON(data)
+	// Read the body into a byte slice
+	err := json.NewDecoder(c.ctx.Request.Body).Decode(data)
+	if err != nil {
+		if c.copyBody != nil {
+			if nErr := json.Unmarshal(c.copyBody, data); nErr != nil {
+				return nErr
+			}
+			c.copyBody = nil
+			return nil
+		}
+		return err
+	}
+
+	return nil
 }
 
 func (c *HttpContext) Response(responseCode int, responseData any) error {

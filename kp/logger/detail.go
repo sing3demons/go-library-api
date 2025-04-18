@@ -71,16 +71,24 @@ type InComing struct {
 }
 
 func (dl *detailLog) AddInputHttpRequest(node, cmd, invoke string, req *http.Request, rawData bool) {
+	bodyBytes, _ := io.ReadAll(req.Body)
+	req.Body.Close()
+
+	// Restore body for both original and clone
+	req.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+	clonedReq := req.Clone(req.Context())
+	clonedReq.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+
 	data := InComing{
 		Header: req.Header,
 		Query:  req.URL.Query(),
 		Body:   nil,
 	}
 
-	bodyBytes, _ := io.ReadAll(req.Body)
-
-	req.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
-	json.Unmarshal(bodyBytes, &data.Body)
+	// Decode the body into a generic map or struct
+	if err := json.Unmarshal(bodyBytes, &data.Body); err != nil {
+		log.Println("Error unmarshalling request body:", err)
+	}
 
 	var raw string
 	if rawData {

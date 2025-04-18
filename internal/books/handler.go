@@ -49,12 +49,13 @@ func (h *BookHandler) CreateBook(c kp.IContext) error {
 	// detailLog, summaryLog := c.Log().NewLog(c.Context(), "", "book")
 	// detailLog.AddInputRequest(node, cmd, "", "", nil)
 	c.CommonLog(cmd, "", "book")
-	c.SummaryLog().AddSuccess(node, cmd, "", "success")
 
 	var req Book
 	if err := c.ReadInput(&req); err != nil {
+		c.SummaryLog().AddError(node, cmd, "", err.Error())
 		return c.Response(http.StatusBadRequest, map[string]any{"error": "invalid request"})
 	}
+	c.SummaryLog().AddSuccess(node, cmd, "", "success")
 	err := h.svc.CreateBook(c, &req)
 	if err != nil {
 		return c.Response(http.StatusInternalServerError, map[string]any{"error": err.Error()})
