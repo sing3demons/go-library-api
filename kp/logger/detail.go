@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"os"
 	"runtime"
+	"strings"
 	"time"
 )
 
@@ -232,7 +233,19 @@ func (dl *detailLog) AddOutput(out logEvent) {
 		dl.timeCounter[out.invoke] = now
 	}
 
+	// Check out.protocol contains http or https
+	if out.protocol != "" {
+		if strings.Contains(out.protocol, "HTTPS") {
+			out.protocol = "https"
+		} else if strings.Contains(out.protocol, "HTTP") {
+			out.protocol = "http"
+		}
+	}
+
 	protocolValue := dl.buildValueProtocol(&out.protocol, &out.protocolMethod)
+	if *protocolValue == "." {
+		protocolValue = nil
+	}
 	outputLog := InputOutputLog{
 		Invoke:   out.invoke,
 		Event:    fmt.Sprintf("%s.%s", out.node, out.cmd),
@@ -279,6 +292,7 @@ func (dl *detailLog) buildValueProtocol(protocol, method *string) *string {
 	if method != nil {
 		result += "." + *method
 	}
+	result = strings.ToLower(result)
 	return &result
 }
 
