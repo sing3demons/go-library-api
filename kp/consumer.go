@@ -117,7 +117,11 @@ func (ctx *kafkaContext) SetHandlers(h []HandleFunc) {
 	ctx.index = -1
 }
 
-func (c *kafkaContext) CommonLog(cmd, initInvoke, scenario string) {
+func (c *kafkaContext) CommonLog(cmd, scenario string) {
+	initInvoke := c.GetHeader("x-request-id")
+	if initInvoke == "" {
+		initInvoke = GenerateXTid("clnt")
+	}
 	detailLog, summaryLog := c.Log().NewLog(c.ctx, initInvoke, scenario)
 
 	c.detailLog = detailLog

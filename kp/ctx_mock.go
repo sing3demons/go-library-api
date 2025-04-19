@@ -212,7 +212,7 @@ func (m *MockContext) Response(code int, data any) error {
 	return nil
 }
 
-func (m *MockContext) CommonLog(cmd, initInvoke, scenario string) {
+func (m *MockContext) CommonLog(cmd, scenario string) {
 	m.methodsToCall["CommonLog"] = true
 }
 

@@ -27,8 +27,7 @@ func (h *UserHandler) RegisterUser(c kp.IContext) error {
 		Email string `json:"email"`
 	}
 	cmd := "register_user"
-	invoke := "register_user"
-	c.CommonLog(cmd, invoke, "register_user")
+	c.CommonLog(cmd, "register_user")
 	if err := c.ReadInput(&req); err != nil {
 		return c.Response(fiber.StatusBadRequest, map[string]any{"error": "invalid request"})
 	}
@@ -41,9 +40,8 @@ func (h *UserHandler) RegisterUser(c kp.IContext) error {
 
 func (h *UserHandler) GetUser(c kp.IContext) error {
 	cmd := "get_user"
-	invoke := "get_user_by_id"
 
-	c.CommonLog(cmd, invoke, "get_user_by_id")
+	c.CommonLog(cmd, "get_user_by_id")
 	id := c.Param("id")
 	book, err := h.svc.GetUserById(c, id)
 	if err != nil {
@@ -57,8 +55,7 @@ func (h *UserHandler) GetUser(c kp.IContext) error {
 
 func (h *UserHandler) GetAllUsers(c kp.IContext) error {
 	cmd := "get_all_users"
-	invoke := "get_all_users"
-	c.CommonLog(cmd, invoke, "get_all_users")
+	c.CommonLog(cmd, "get_all_users")
 	c.SummaryLog().AddSuccess("client", cmd, "", "success")
 	users, err := h.svc.GetAllUsers(c)
 	if err != nil {

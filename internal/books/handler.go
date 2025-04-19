@@ -24,7 +24,7 @@ func (h *BookHandler) GetBook(c kp.IContext) error {
 	node := "client"
 	cmd := "get_book"
 
-	c.CommonLog(cmd, "", "book")
+	c.CommonLog(cmd, "book")
 
 	// logger := c.Log()
 	// detailLog, summaryLog := logger.NewLog(c.Context(), "", "book")
@@ -48,7 +48,7 @@ func (h *BookHandler) CreateBook(c kp.IContext) error {
 	cmd := "create_book"
 	// detailLog, summaryLog := c.Log().NewLog(c.Context(), "", "book")
 	// detailLog.AddInputRequest(node, cmd, "", "", nil)
-	c.CommonLog(cmd, "", "book")
+	c.CommonLog(cmd, "book")
 
 	var req Book
 	if err := c.ReadInput(&req); err != nil {
@@ -70,7 +70,7 @@ func (h *BookHandler) GetAllBooks(c kp.IContext) error {
 	cmd := "get_books"
 
 	// detailLog, summaryLog := c.Log().NewLog(c.Context(), "", "book")
-	c.CommonLog(cmd, "", "book")
+	c.CommonLog(cmd, "book")
 
 	filter := map[string]any{}
 

@@ -65,9 +65,10 @@ func (dl *detailLog) IsRawDataEnabled() bool {
 }
 
 type InComing struct {
-	Header any        `json:"header,omitempty"`
-	Query  url.Values `json:"query,omitempty"`
-	Body   any        `json:"body,omitempty"`
+	Header      any        `json:"header,omitempty"`
+	QueryString url.Values `json:"query,omitempty"`
+	Body        any        `json:"body,omitempty"`
+	Url         string     `json:"url,omitempty"`
 }
 
 func (dl *detailLog) AddInputHttpRequest(node, cmd, invoke string, req *http.Request, rawData bool) {
@@ -80,9 +81,10 @@ func (dl *detailLog) AddInputHttpRequest(node, cmd, invoke string, req *http.Req
 	clonedReq.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
 
 	data := InComing{
-		Header: req.Header,
-		Query:  req.URL.Query(),
-		Body:   nil,
+		Header:      req.Header,
+		QueryString: req.URL.Query(),
+		Body:        nil,
+		Url:         req.URL.String(),
 	}
 
 	// Decode the body into a generic map or struct

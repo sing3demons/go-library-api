@@ -24,7 +24,7 @@ type IContext interface {
 	Response(code int, data any) error
 
 	// SendMessage(topic string, payload any, opts ...OptionProducerMsg) (RecordMetadata, error)
-	CommonLog(cmd, initInvoke, scenario string)
+	CommonLog(cmd, scenario string)
 	DetailLog() logger.DetailLog
 	SummaryLog() logger.SummaryLog
 }
@@ -55,7 +55,7 @@ func newMuxContext(c *gin.Context, cfg *KafkaConfig, log ILogger) IContext {
 	return &HttpContext{ctx: c, cfg: cfg, log: log}
 }
 
-func (c *HttpContext) CommonLog(cmd, initInvoke, scenario string) {
+func (c *HttpContext) CommonLog(cmd, scenario string) {
 	bodyBytes, _ := io.ReadAll(c.ctx.Request.Body)
 	c.ctx.Request.Body.Close()
 	c.copyBody = bodyBytes
@@ -63,6 +63,11 @@ func (c *HttpContext) CommonLog(cmd, initInvoke, scenario string) {
 	c.ctx.Request.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
 	clonedReq := c.ctx.Request.Clone(c.ctx.Request.Context())
 	clonedReq.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+
+	initInvoke := c.ctx.Request.Header.Get("X-Request-ID")
+	if initInvoke == "" {
+		initInvoke = GenerateXTid("clnt")
+	}
 
 	detailLog, summaryLog := c.Log().NewLog(c.ctx.Request.Context(), initInvoke, scenario)
 

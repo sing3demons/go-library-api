@@ -180,13 +180,14 @@ func TestAddInputHttpRequest(t *testing.T) {
 				Header: http.Header{
 					"Content-Type": []string{ContentTypeJSON},
 				},
-				Query: url.Values{
+				QueryString: url.Values{
 					"param1": []string{"value1"},
 					"param2": []string{"value2"},
 				},
 				Body: map[string]interface{}{
 					"key": "value",
 				},
+				Url: "?param1=value1&param2=value2",
 			},
 			expectRaw: true,
 		},
@@ -211,13 +212,14 @@ func TestAddInputHttpRequest(t *testing.T) {
 				Header: http.Header{
 					"Accept": []string{ContentTypeJSON},
 				},
-				Query: url.Values{
+				QueryString: url.Values{
 					"param1": []string{"value1"},
 					"param2": []string{"value2"},
 				},
 				Body: map[string]interface{}{
 					"key": "value",
 				},
+				Url: "?param1=value1\u0026param2=value2",
 			},
 			expectRaw: false,
 		},
