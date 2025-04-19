@@ -19,6 +19,9 @@ type kafkaContext struct {
 	Logger   ILogger
 	ctx      context.Context
 
+	handlers []HandleFunc
+	index    int
+
 	detailLog  logger.DetailLog
 	summaryLog logger.SummaryLog
 }
@@ -77,7 +80,6 @@ func (ctx *kafkaContext) Log() ILogger {
 	default:
 		return ctx.Logger
 	}
-
 }
 
 func (ctx kafkaContext) Param(name string) string {
@@ -100,6 +102,19 @@ func (ctx *kafkaContext) GetHeader(key string) string {
 		return ""
 	}
 	return ctx.headers[key]
+}
+
+func (ctx *kafkaContext) Next() {
+	// implementation for Kafka consumer context
+	ctx.index++
+	if ctx.index < len(ctx.handlers) {
+		ctx.handlers[ctx.index](ctx)
+	}
+}
+
+func (ctx *kafkaContext) SetHandlers(h []HandleFunc) {
+	ctx.handlers = h
+	ctx.index = -1
 }
 
 func (c *kafkaContext) CommonLog(cmd, initInvoke, scenario string) {

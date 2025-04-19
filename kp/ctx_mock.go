@@ -170,6 +170,10 @@ func (m *MockContext) GetHeader(key string) string {
 	return m.Headers[key]
 }
 
+func (m *MockContext) Next() {
+	m.methodsToCall["Next"] = true
+}
+
 func (m *MockContext) Log() ILogger {
 	m.methodsToCall["Log"] = true
 	return m.LogInstance
@@ -265,5 +269,4 @@ func (m *MockContext) Verify(t *testing.T) {
 
 func printError(t *testing.T, methodName string) {
 	t.Errorf("Expected to call '%s', but it wasn't.", methodName)
-
 }

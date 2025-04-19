@@ -15,6 +15,7 @@ type IContext interface {
 	Context() context.Context
 	SetHeader(key, value string)
 	GetHeader(key string) string
+	Next()
 
 	Log() ILogger
 	Param(name string) string
@@ -43,6 +44,9 @@ type HttpContext struct {
 	baseCommand string
 	initInvoke  string
 	copyBody    []byte
+
+	// handlers []HandleFunc
+	// index    int
 }
 
 func newMuxContext(c *gin.Context, cfg *KafkaConfig, log ILogger) IContext {
@@ -121,9 +125,7 @@ func (c *HttpContext) ReadInput(data any) error {
 
 func (c *HttpContext) Response(responseCode int, responseData any) error {
 	// c.w.Header().Set("Content-type", "application/json; charset=UTF8")
-
 	// c.w.WriteHeader(responseCode)
-
 	// return json.NewEncoder(c.w).Encode(responseData)
 	c.ctx.JSON(responseCode, responseData)
 	c.detailLog.AddOutputRequest("client", c.baseCommand, c.initInvoke, responseData, responseData)
@@ -142,4 +144,8 @@ func (c *HttpContext) SetHeader(key, value string) {
 
 func (c *HttpContext) GetHeader(key string) string {
 	return c.ctx.GetHeader(key)
+}
+
+func (c *HttpContext) Next() {
+	c.ctx.Next()
 }
