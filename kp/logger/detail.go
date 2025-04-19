@@ -233,15 +233,6 @@ func (dl *detailLog) AddOutput(out logEvent) {
 		dl.timeCounter[out.invoke] = now
 	}
 
-	// Check out.protocol contains http or https
-	if out.protocol != "" {
-		if strings.Contains(out.protocol, "HTTPS") {
-			out.protocol = "https"
-		} else if strings.Contains(out.protocol, "HTTP") {
-			out.protocol = "http"
-		}
-	}
-
 	protocolValue := dl.buildValueProtocol(&out.protocol, &out.protocolMethod)
 	if *protocolValue == "." {
 		protocolValue = nil
@@ -287,6 +278,15 @@ func (dl *detailLog) End() {
 func (dl *detailLog) buildValueProtocol(protocol, method *string) *string {
 	if protocol == nil {
 		return nil
+	}
+
+	// Check out.protocol contains http or https
+	if *protocol != "" {
+		if strings.Contains(*protocol, "HTTPS") {
+			*protocol = "https"
+		} else if strings.Contains(*protocol, "HTTP") {
+			*protocol = "http"
+		}
 	}
 	result := *protocol
 	if method != nil {
