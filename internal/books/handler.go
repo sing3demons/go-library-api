@@ -63,9 +63,12 @@ func (h *BookHandler) CreateBook(c kp.IContext) error {
 
 	result, err := kp.RequestHttp(kp.RequestAttributes{
 		Method: http.MethodGet,
-		URL:    "http://localhost:8080/books/" + req.ID,
+		URL:    "http://localhost:8080/books/{id}",
 		Headers: map[string]string{
 			"Content-Type": "application/json",
+		},
+		Params: map[string]string{
+			"id": req.ID,
 		},
 		Invoke:     "x-request-id",
 		Service:    "http_book",
@@ -78,7 +81,7 @@ func (h *BookHandler) CreateBook(c kp.IContext) error {
 		c.SummaryLog().AddField("ErrorCause", err.Error())
 		return c.Response(http.StatusCreated, map[string]any{
 			"message": "book created",
-			"id":    req.ID,
+			"id":      req.ID,
 		})
 	}
 

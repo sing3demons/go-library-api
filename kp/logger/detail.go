@@ -67,6 +67,9 @@ type InComing struct {
 	QueryString url.Values     `json:"query,omitempty"`
 	Body        any            `json:"body,omitempty"`
 	Url         string         `json:"url,omitempty"`
+
+	PathParams map[string]any `json:"pathParams,omitempty"`
+	Cookies    map[string]any `json:"cookies,omitempty"`
 }
 
 func (dl *detailLog) AddInputHttpRequest(node, cmd, invoke string, data InComing, rawData bool, protocol, protocolMethod string) {

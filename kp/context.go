@@ -92,6 +92,27 @@ func (c *HttpContext) Incoming() logger.InComing {
 		data.QueryString = query
 	}
 
+	// --- Copy path parameters ---
+	if params := c.ctx.Params; len(params) > 0 {
+		paramMap := make(map[string]any, len(params))
+		for _, param := range params {
+			if param.Key != "" && param.Value != "" {
+				paramMap[param.Key] = param.Value
+			}
+		}
+		data.PathParams = paramMap
+	}
+	// --- Copy cookies ---
+	if cookies := c.ctx.Request.Cookies(); len(cookies) > 0 {
+		cookieMap := make(map[string]any, len(cookies))
+		for _, cookie := range cookies {
+			if cookie.Name != "" && cookie.Value != "" {
+				cookieMap[cookie.Name] = cookie.Value
+			}
+		}
+		data.Cookies = cookieMap
+	}
+
 	return data
 }
 
