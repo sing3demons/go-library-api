@@ -55,23 +55,64 @@ func newMuxContext(c *gin.Context, cfg *KafkaConfig, log ILogger) IContext {
 	return &HttpContext{ctx: c, cfg: cfg, log: log}
 }
 
-func (c *HttpContext) CommonLog(cmd, scenario string) {
-	bodyBytes, _ := io.ReadAll(c.ctx.Request.Body)
-	c.ctx.Request.Body.Close()
-	c.copyBody = bodyBytes
-	// Restore body for both original and clone
-	c.ctx.Request.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
-	clonedReq := c.ctx.Request.Clone(c.ctx.Request.Context())
-	clonedReq.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+func (c *HttpContext) Incoming() logger.InComing {
+	var data logger.InComing
 
-	initInvoke := c.ctx.Request.Header.Get("X-Request-ID")
+	// check method if GET or DELETE not request body
+	if c.ctx.Request.Method == "GET" || c.ctx.Request.Method == "DELETE" {
+		c.copyBody = nil
+	} else {
+		// --- Copy and parse body ---
+		var body map[string]any
+		rawBody, err := io.ReadAll(c.ctx.Request.Body)
+		if err == nil && len(rawBody) > 0 {
+			// Restore body stream for future reads
+			c.ctx.Request.Body = io.NopCloser(bytes.NewBuffer(rawBody))
+
+			// Try parsing JSON
+			if err := json.Unmarshal(rawBody, &body); err == nil && len(body) > 0 {
+				data.Body = body
+			}
+		}
+	}
+
+	// --- Copy headers ---
+	if headers := c.ctx.Request.Header; len(headers) > 0 {
+		headerMap := make(map[string]any, len(headers))
+		for key, values := range headers {
+			if len(values) > 0 {
+				headerMap[key] = values[0]
+			}
+		}
+		data.Header = headerMap
+	}
+
+	// --- Copy query string ---
+	if query := c.ctx.Request.URL.Query(); len(query) > 0 {
+		data.QueryString = query
+	}
+
+	return data
+}
+
+func (c *HttpContext) CommonLog(cmd, scenario string) {
+	inComing := c.Incoming()
+
+	xrid := inComing.Header["x-request-id"]
+	var initInvoke string
+	if xrid != nil {
+		initInvoke = xrid.(string)
+	}
+
 	if initInvoke == "" {
 		initInvoke = GenerateXTid("clnt")
 	}
 
 	detailLog, summaryLog := c.Log().NewLog(c.ctx.Request.Context(), initInvoke, scenario)
 
-	detailLog.AddInputHttpRequest("client", cmd, initInvoke, c.ctx.Request.Clone(c.ctx.Request.Context()), true)
+	protocol := c.ctx.Request.Proto
+	protocolMethod := c.ctx.Request.Method
+	detailLog.AddInputHttpRequest("client", cmd, initInvoke, inComing, true, protocol, protocolMethod)
 	c.baseCommand = cmd
 	c.initInvoke = initInvoke
 

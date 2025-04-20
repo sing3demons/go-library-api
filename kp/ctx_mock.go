@@ -3,7 +3,6 @@ package kp
 import (
 	"context"
 	"errors"
-	"net/http"
 	"testing"
 
 	"github.com/sing3demons/go-library-api/kp/logger"
@@ -47,7 +46,7 @@ func (m *MockDetailLog) AddInputRequest(node, cmd, invoke string, rawData, data 
 	m.methodsToCall["AddInputRequest"] = true
 }
 
-func (m *MockDetailLog) AddInputHttpRequest(node, cmd, invoke string, req *http.Request, rawData bool) {
+func (m *MockDetailLog) AddInputHttpRequest(node, cmd, invoke string, data logger.InComing, rawData bool, protocol, protocolMethod string) {
 	m.methodsToCall["AddInputHttpRequest"] = true
 }
 

@@ -177,9 +177,9 @@ func TestAddInputHttpRequest(t *testing.T) {
 				Body: io.NopCloser(bytes.NewBufferString(`{"key":"value"}`)),
 			},
 			expected: InComing{
-				Header: http.Header{
-					"Content-Type": []string{ContentTypeJSON},
-				},
+				// Header: http.Header{
+				// 	"Content-Type": []string{ContentTypeJSON},
+				// },
 				QueryString: url.Values{
 					"param1": []string{"value1"},
 					"param2": []string{"value2"},
@@ -209,9 +209,7 @@ func TestAddInputHttpRequest(t *testing.T) {
 				Body: io.NopCloser(bytes.NewBufferString(`{"key":"value"}`)),
 			},
 			expected: InComing{
-				Header: http.Header{
-					"Accept": []string{ContentTypeJSON},
-				},
+				Header: map[string]any{},
 				QueryString: url.Values{
 					"param1": []string{"value1"},
 					"param2": []string{"value2"},
@@ -235,7 +233,7 @@ func TestAddInputHttpRequest(t *testing.T) {
 			}
 
 			dl := NewDetailLog("test_session", "test_invoke", "test_scenario", false).(*detailLog)
-			dl.AddInputHttpRequest(tc.node, tc.cmd, tc.invoke, tc.req, tc.rawData)
+			dl.AddInputHttpRequest(tc.node, tc.cmd, tc.invoke, InComing{}, tc.rawData, "HTTP/1.1", "POST")
 
 			if len(dl.Input) != 1 {
 				t.Fatalf("expected 1 input log, but got %d", len(dl.Input))

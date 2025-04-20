@@ -1,12 +1,9 @@
 package logger
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
 	"log"
-	"net/http"
 	"net/url"
 	"os"
 	"runtime"
@@ -17,7 +14,7 @@ import (
 type DetailLog interface {
 	IsRawDataEnabled() bool
 	AddInputRequest(node, cmd, invoke string, rawData, data any)
-	AddInputHttpRequest(node, cmd, invoke string, req *http.Request, rawData bool)
+	AddInputHttpRequest(node, cmd, invoke string, data InComing, rawData bool, protocol, protocolMethod string)
 	AddOutputRequest(node, cmd, invoke string, rawData, data any)
 	End()
 	AddInputResponse(node, cmd, invoke string, rawData, data any, protocol, protocolMethod string)
@@ -66,40 +63,18 @@ func (dl *detailLog) IsRawDataEnabled() bool {
 }
 
 type InComing struct {
-	Header      any        `json:"header,omitempty"`
-	QueryString url.Values `json:"query,omitempty"`
-	Body        any        `json:"body,omitempty"`
-	Url         string     `json:"url,omitempty"`
+	Header      map[string]any `json:"header,omitempty"`
+	QueryString url.Values     `json:"query,omitempty"`
+	Body        any            `json:"body,omitempty"`
+	Url         string         `json:"url,omitempty"`
 }
 
-func (dl *detailLog) AddInputHttpRequest(node, cmd, invoke string, req *http.Request, rawData bool) {
-	bodyBytes, _ := io.ReadAll(req.Body)
-	req.Body.Close()
-
-	// Restore body for both original and clone
-	req.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
-	clonedReq := req.Clone(req.Context())
-	clonedReq.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
-
-	data := InComing{
-		Header:      req.Header,
-		QueryString: req.URL.Query(),
-		Body:        nil,
-		Url:         req.URL.String(),
-	}
-
-	// Decode the body into a generic map or struct
-	if err := json.Unmarshal(bodyBytes, &data.Body); err != nil {
-		log.Println("Error unmarshalling request body:", err)
-	}
-
+func (dl *detailLog) AddInputHttpRequest(node, cmd, invoke string, data InComing, rawData bool, protocol, protocolMethod string) {
 	var raw string
 	if rawData {
 		raw = ToJson(data)
 	}
 
-	protocol := req.Proto
-	protocolMethod := req.Method
 	dl.addInput(&logEvent{
 		node:           node,
 		cmd:            cmd,

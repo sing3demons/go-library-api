@@ -1,6 +1,7 @@
 package books
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/sing3demons/go-library-api/kp"
@@ -60,6 +61,22 @@ func (h *BookHandler) CreateBook(c kp.IContext) error {
 	if err != nil {
 		return c.Response(http.StatusInternalServerError, map[string]any{"error": err.Error()})
 	}
+
+	result, err := kp.RequestHttp(kp.RequestAttributes{
+		Method: http.MethodGet,
+		URL:    "http://localhost:8080/books/" + req.ID,
+		Headers: map[string]string{
+			"Content-Type": "application/json",
+		},
+		Invoke:     "x-request-id",
+		Service:    "http_book",
+		Command:    "get_book",
+		RetryCount: 3,
+		Timeout:    5,
+	}, c.DetailLog(), c.SummaryLog())
+
+	fmt.Println("==========================> ", err)
+	fmt.Println("==========================> ", result)
 
 	c.SummaryLog().End("200", "")
 	return c.Response(http.StatusCreated, map[string]any{"message": "book created", "id": req.ID})
