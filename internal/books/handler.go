@@ -1,7 +1,6 @@
 package books
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/sing3demons/go-library-api/kp"
@@ -75,11 +74,19 @@ func (h *BookHandler) CreateBook(c kp.IContext) error {
 		Timeout:    5,
 	}, c.DetailLog(), c.SummaryLog())
 
-	fmt.Println("==========================> ", err)
-	fmt.Println("==========================> ", result)
+	if err != nil {
+		c.SummaryLog().AddField("ErrorCause", err.Error())
+		return c.Response(http.StatusCreated, map[string]any{
+			"message": "book created",
+			"id":    req.ID,
+		})
+	}
 
 	c.SummaryLog().End("200", "")
-	return c.Response(http.StatusCreated, map[string]any{"message": "book created", "id": req.ID})
+	return c.Response(http.StatusCreated, map[string]any{
+		"message": "book created",
+		"data":    result,
+	})
 }
 
 func (h *BookHandler) GetAllBooks(c kp.IContext) error {

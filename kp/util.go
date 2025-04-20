@@ -124,19 +124,19 @@ func Generate(alphabet string, size int) (string, error) {
 func GenerateXTid(nodeName string) string {
 	now := time.Now()
 	date := now.Format("20060102")
-	var xtid string
+	var xTid string
 
 	if nodeName == "" {
-		nodeName = "default" + "-" + date
+		xTid = "default" + "-" + date
 	} else if len(nodeName) > 5 {
-		xtid = nodeName[:5] + "-" + date
+		xTid = nodeName[:5] + "-" + date
 	} else {
-		xtid = nodeName + "-" + date
+		xTid = nodeName + "-" + date
 	}
-	remainingLength := 22 - len(xtid)
+	remainingLength := 22 - len(xTid)
 	id, err := Generate(string(defaultAlphabet), remainingLength)
 	if err != nil {
-		return xtid + now.Format("20060102150405")
+		return xTid + now.Format("20060102150405")
 	}
-	return xtid + id
+	return xTid + id
 }
