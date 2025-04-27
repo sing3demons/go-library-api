@@ -3,7 +3,6 @@ package logger
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/url"
 	"os"
 	"runtime"
@@ -228,7 +227,8 @@ func (dl *detailLog) AddOutput(out logEvent) {
 
 func (dl *detailLog) End() {
 	if dl.startTimeDate.IsZero() {
-		log.Fatal("end() called without any input/output")
+		// log.Fatal("end() called without any input/output")
+		panic("end() called without any input/output")
 	}
 
 	processingTime := fmt.Sprintf("%d ms", time.Since(dl.startTimeDate).Milliseconds())
