@@ -6,15 +6,21 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/sing3demons/go-library-api/pkg/kp/logger"
+	"go.opentelemetry.io/otel"
 )
 
 type IContext interface {
 	Context() context.Context
 	SetHeader(key, value string)
 	GetHeader(key string) string
+	// Header() http.Header
+	// FullPath() string
+	// GetMethod() string
 	Next()
 
 	Log() ILogger
@@ -23,7 +29,7 @@ type IContext interface {
 	ReadInput(data any) error
 	Response(code int, data any) error
 
-	// SendMessage(topic string, payload any, opts ...OptionProducerMsg) (RecordMetadata, error)
+	SendMessage(topic string, payload any, opts ...OptionProducerMsg) (RecordMetadata, error)
 	CommonLog(cmd, scenario string)
 	DetailLog() logger.DetailLog
 	SummaryLog() logger.SummaryLog
@@ -153,7 +159,25 @@ func (c *HttpContext) Context() context.Context {
 }
 
 func (c *HttpContext) SendMessage(topic string, message any, opts ...OptionProducerMsg) (RecordMetadata, error) {
-	return producer(c.cfg.producer, topic, message, opts...)
+	ctx, span := otel.GetTracerProvider().Tracer("gokp").Start(c.Context(), "kafka-producer-"+topic)
+	c.ctx.Request = c.ctx.Request.WithContext(ctx)
+	defer span.End()
+	invoke := uuid.NewString()
+	c.detailLog.AddOutputRequest("kafka", "producer", invoke, message, map[string]any{
+		"Body": map[string]any{
+			"topic": topic,
+			"value": message,
+		},
+	}, "kafka", "")
+	result, err := producer(c.cfg.producer, topic, message, opts...)
+	if err != nil {
+		c.detailLog.AddInputResponse("kafka", "producer", invoke, message, err.Error())
+		c.summaryLog.AddError("kafka", "producer", "", err.Error())
+		return RecordMetadata{}, err
+	}
+	c.detailLog.AddInputResponse("kafka", "producer", invoke, result, result)
+	c.summaryLog.AddSuccess("kafka", "producer", "20000", "success")
+	return result, nil
 }
 
 func (c *HttpContext) Log() ILogger {
@@ -195,7 +219,7 @@ func (c *HttpContext) Response(responseCode int, responseData any) error {
 	// c.w.WriteHeader(responseCode)
 	// return json.NewEncoder(c.w).Encode(responseData)
 	c.ctx.JSON(responseCode, responseData)
-	c.detailLog.AddOutputRequest("client", c.baseCommand, c.initInvoke, responseData, responseData)
+	c.detailLog.AddOutputResponse("client", c.baseCommand, c.initInvoke, responseData, responseData)
 
 	if !c.summaryLog.IsEnd() {
 		c.summaryLog.End(fmt.Sprintf("%d", responseCode), "")
@@ -215,4 +239,18 @@ func (c *HttpContext) GetHeader(key string) string {
 
 func (c *HttpContext) Next() {
 	c.ctx.Next()
+}
+
+func (c *HttpContext) Header() http.Header {
+	return c.ctx.Request.Header
+}
+
+func (c *HttpContext) FullPath() string {
+	return c.ctx.FullPath()
+}
+func (c *HttpContext) GetMethod() string {
+	return c.ctx.Request.Method
+}
+func (c *HttpContext) GetPath() string {
+	return c.ctx.Request.URL.Path
 }

@@ -119,7 +119,7 @@ func (mm *MockCollection) InsertMany(ctx context.Context, documents interface{},
 	}, mm.Err
 }
 
-func (mm *MockCollection) CreateUser(user *entities.User) (entities.ProcessData[entities.User], error) {
+func (mm *MockCollection) CreateUser(ctx context.Context, user *entities.User) (entities.ProcessData[entities.User], error) {
 	user.ID = mm.InsertedID
 	result := entities.ProcessData[entities.User]{}
 
@@ -138,7 +138,7 @@ func (mm *MockCollection) CreateUser(user *entities.User) (entities.ProcessData[
 	return result, mm.Err
 }
 
-func (mm *MockCollection) GetUserByID(id string) (entities.ProcessData[entities.User], error) {
+func (mm *MockCollection) GetUserByID(ctx context.Context, id string) (entities.ProcessData[entities.User], error) {
 	result := entities.ProcessData[entities.User]{}
 
 	result.Body.Method = "FindOne"
@@ -159,7 +159,7 @@ func (mm *MockCollection) GetUserByID(id string) (entities.ProcessData[entities.
 	return result, nil
 }
 
-func (mm *MockCollection) GetAllUsers(filter map[string]any) (result entities.ProcessData[[]entities.User], err error) {
+func (mm *MockCollection) GetAllUsers(ctx context.Context, filter map[string]any) (result entities.ProcessData[[]entities.User], err error) {
 	result.Body.Method = "Find"
 	result.Body.Document = nil
 	result.Body.Options = nil

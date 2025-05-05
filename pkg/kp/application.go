@@ -11,6 +11,7 @@ import (
 
 	"github.com/IBM/sarama"
 	"github.com/sing3demons/go-library-api/pkg/kp/logger"
+	"go.opentelemetry.io/otel/sdk/trace"
 )
 
 type IApplication interface {
@@ -40,9 +41,12 @@ type IRouter interface {
 }
 
 type AppConfig struct {
-	Port   string
-	Router Router
-	LogKP  bool
+	AppName    string
+	Version    string
+	Port       string
+	Router     Router
+	LogKP      bool
+	TracerHost string
 }
 
 type KafkaConfig struct {
@@ -77,10 +81,11 @@ const (
 )
 
 type Server struct {
-	httpServer *http.Server
-	kafka      *KafkaServer
-	router     IRouter
-	Log        ILogger
+	httpServer    *http.Server
+	kafka         *KafkaServer
+	router        IRouter
+	Log           ILogger
+	traceProvider *trace.TracerProvider
 }
 
 func NewApplication(config *Config, nLog ILogger) IApplication {
@@ -102,6 +107,16 @@ func NewApplication(config *Config, nLog ILogger) IApplication {
 		}
 
 		kafka = k
+	}
+
+	var traceProvider *trace.TracerProvider
+	if config.AppConfig.TracerHost != "" {
+		tp, err := startTracing(config.AppConfig.AppName, config.AppConfig.TracerHost)
+		if err != nil {
+			nLog.Errorf("Failed to start tracing: %v", err)
+		} else {
+			traceProvider = tp
+		}
 	}
 
 	var router IRouter
@@ -133,9 +148,10 @@ func NewApplication(config *Config, nLog ILogger) IApplication {
 	}
 
 	return &Server{
-		kafka:  kafka,
-		router: router,
-		Log:    nLog,
+		kafka:         kafka,
+		router:        router,
+		Log:           nLog,
+		traceProvider: traceProvider,
 	}
 }
 
@@ -143,7 +159,9 @@ func (s *Server) Start() {
 	if s.router != nil {
 		s.httpServer = s.router.Register()
 	}
-	ctx, cancel := context.WithCancel(context.Background())
+
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
 	signalChan := make(chan os.Signal, 1)
 	signal.Notify(signalChan, os.Interrupt, syscall.SIGTERM)
 
@@ -172,21 +190,22 @@ func (s *Server) Start() {
 	<-signalChan
 	s.Log.Println("Shutdown signal received")
 
-	// Gracefully shutdown Kafka
-	cancel()
-
 	if s.kafka != nil {
 		s.kafka.Shutdown()
 	}
 
-	// Gracefully shutdown HTTP server
-	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer shutdownCancel()
-
-	if err := s.httpServer.Shutdown(shutdownCtx); err != nil {
+	if err := s.httpServer.Shutdown(ctx); err != nil {
 		s.Log.Printf("HTTP Server Shutdown Error: %v", err)
 	} else {
 		s.Log.Println("HTTP server shutdown complete")
+	}
+
+	if s.traceProvider != nil {
+		defer func() {
+			if err := s.traceProvider.Shutdown(ctx); err != nil {
+				s.Log.Println("failed to stop trace provider:", err)
+			}
+		}()
 	}
 
 	s.Log.Println("Application exited cleanly")

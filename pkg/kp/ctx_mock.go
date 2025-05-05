@@ -42,7 +42,7 @@ func (m *MockDetailLog) IsRawDataEnabled() bool {
 	return false
 }
 
-func (m *MockDetailLog) AddInputRequest(node, cmd, invoke string, rawData, data any) {
+func (m *MockDetailLog) AddInputRequest(node, cmd, invoke string, rawData, data any, protocol, protocolMethod string) {
 	m.methodsToCall["AddInputRequest"] = true
 }
 
@@ -50,7 +50,7 @@ func (m *MockDetailLog) AddInputHttpRequest(node, cmd, invoke string, data logge
 	m.methodsToCall["AddInputHttpRequest"] = true
 }
 
-func (m *MockDetailLog) AddOutputRequest(node, cmd, invoke string, rawData, data any) {
+func (m *MockDetailLog) AddOutputRequest(node, cmd, invoke string, rawData, data any, protocol, protocolMethod string) {
 	m.methodsToCall["AddOutputRequest"] = true
 }
 
@@ -58,7 +58,7 @@ func (m *MockDetailLog) End() {
 	m.methodsToCall["End"] = true
 }
 
-func (m *MockDetailLog) AddInputResponse(node, cmd, invoke string, rawData, data any, protocol, protocolMethod string) {
+func (m *MockDetailLog) AddInputResponse(node, cmd, invoke string, rawData, data any) {
 	m.methodsToCall["AddInputResponse"] = true
 }
 
@@ -152,6 +152,11 @@ func NewMockContext() *MockContext {
 		LogInstance:   &MockLogger{},
 		methodsToCall: make(map[string]bool),
 	}
+}
+
+func (m *MockContext) SendMessage(topic string, payload any, opts ...OptionProducerMsg) (RecordMetadata, error) {
+	m.methodsToCall["SendMessage"] = true
+	return RecordMetadata{}, nil
 }
 
 func (m *MockContext) Context() context.Context {

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/IBM/sarama"
+	"go.opentelemetry.io/otel"
 )
 
 type KafkaServer struct {
@@ -68,15 +69,17 @@ func (s *KafkaServer) Shutdown() {
 	}
 }
 
-func (s *KafkaServer) SendMessage(topic string, payload any, opts ...OptionProducerMsg) (RecordMetadata, error) {
+func (s *KafkaServer) SendMessage(c context.Context, topic string, payload any, opts ...OptionProducerMsg) (RecordMetadata, error) {
+	_, span := otel.GetTracerProvider().Tracer("gokp").Start(c, "kafka-producer-"+topic)
+	defer span.End()
 	return producer(s.producer, topic, payload, opts...)
 }
 
 func (s *KafkaServer) Consume(topic string, handler ServiceHandleFunc) {
 	s.topics = append(s.topics, topic)
 	s.mutex.Lock()
-	defer s.mutex.Unlock()
 	s.handlers[topic] = handler
+	defer s.mutex.Unlock()
 }
 
 func (s *KafkaServer) Setup(_ sarama.ConsumerGroupSession) error {

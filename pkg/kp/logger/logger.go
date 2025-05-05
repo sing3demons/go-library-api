@@ -50,7 +50,7 @@ type DetailLogConfig struct {
 type InputOutputLog struct {
 	Invoke   string      `json:"Invoke"`
 	Event    string      `json:"Event"`
-	Protocol *string     `json:"Protocol,omitempty"`
+	Protocol string     `json:"Protocol,omitempty"`
 	Type     string      `json:"Type"`
 	RawData  any `json:"RawData,omitempty"`
 	Data     any `json:"Data"`

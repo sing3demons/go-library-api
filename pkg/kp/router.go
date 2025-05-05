@@ -17,6 +17,8 @@ func newServer(cfg *Config, log ILogger) IRouter {
 	app := gin.New()
 	app.Use(gin.Recovery())
 
+	app.Use(ginOpenTelemetryMiddleware())
+
 	return &httpApplication{
 		router: app,
 		cfg:    cfg,

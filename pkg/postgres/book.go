@@ -1,13 +1,15 @@
 package postgres
 
 import (
+	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/sing3demons/go-library-api/pkg/entities"
 )
 
-func (p *Postgres) GetBookByID(id string) (entities.ProcessData[entities.Book], error) {
+func (p *Postgres) GetBookByID(ctx context.Context, id string) (entities.ProcessData[entities.Book], error) {
 	query := "SELECT id, title, author FROM books WHERE id = $1"
 
 	result := entities.ProcessData[entities.Book]{}
@@ -17,7 +19,11 @@ func (p *Postgres) GetBookByID(id string) (entities.ProcessData[entities.Book], 
 	result.Body.Query = map[string]string{"id": id}
 	result.RawData = fmt.Sprintf("SELECT id, title, author FROM books WHERE id = %s", id)
 
-	rows, err := p.DB.Query(query, id)
+	result.Body.Method = "findOne"
+	ctx, span := p.addTrace(ctx, result.Body.Method, result.Body.Table)
+	defer p.sendOperationStats(time.Now(), result.Body.Method, span)
+
+	rows, err := p.DB.QueryContext(ctx, query, id)
 	if err != nil {
 		return result, err
 	}
@@ -36,7 +42,7 @@ func (p *Postgres) GetBookByID(id string) (entities.ProcessData[entities.Book], 
 }
 
 // GetAllBooks returns all books from the database
-func (p *Postgres) GetAllBooks(filter map[string]any) (result entities.ProcessData[[]entities.Book], err error) {
+func (p *Postgres) GetAllBooks(ctx context.Context, filter map[string]any) (result entities.ProcessData[[]entities.Book], err error) {
 	query := "SELECT id, title, author FROM books"
 
 	var keys []string
@@ -68,7 +74,11 @@ func (p *Postgres) GetAllBooks(filter map[string]any) (result entities.ProcessDa
 
 	result.RawData = rawData
 
-	rows, err := p.DB.Query(query, values...)
+	result.Body.Method = "find"
+	ctx, span := p.addTrace(ctx, result.Body.Method, result.Body.Table)
+	defer p.sendOperationStats(time.Now(), result.Body.Method, span)
+
+	rows, err := p.DB.QueryContext(ctx, query, values...)
 	if err != nil {
 		return result, err
 	}
@@ -88,18 +98,20 @@ func (p *Postgres) GetAllBooks(filter map[string]any) (result entities.ProcessDa
 	return result, nil
 }
 
-func (p *Postgres) CreateBook(book entities.Book) (entities.ProcessData[entities.Book], error) {
+func (p *Postgres) CreateBook(ctx context.Context, book entities.Book) (entities.ProcessData[entities.Book], error) {
 	query := "INSERT INTO books (title, author) VALUES ($1, $2) RETURNING id"
 
 	var result entities.ProcessData[entities.Book]
 	result.RawData = query
-
 	result.Body.Table = "books"
 
+	result.Body.Method = "insert"
+	ctx, span := p.addTrace(ctx, result.Body.Method, result.Body.Table)
+	defer p.sendOperationStats(time.Now(), result.Body.Method, span)
 	result.RawData = strings.Replace(result.RawData, "$1", book.Title, 1)
 	result.RawData = strings.Replace(result.RawData, "$2", book.Author, 1)
 
-	err := p.DB.QueryRow(query, book.Title, book.Author).Scan(&book.ID)
+	err := p.DB.QueryRowContext(ctx, query, book.Title, book.Author).Scan(&book.ID)
 	if err != nil {
 		return result, err
 	}

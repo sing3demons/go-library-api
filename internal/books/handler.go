@@ -61,7 +61,7 @@ func (h *BookHandler) CreateBook(c kp.IContext) error {
 		return c.Response(http.StatusInternalServerError, map[string]any{"error": err.Error()})
 	}
 
-	result, err := kp.RequestHttp(kp.RequestAttributes{
+	result, err := kp.RequestHttp(c, kp.RequestAttributes{
 		Method: http.MethodGet,
 		URL:    "http://localhost:8080/books/{id}",
 		Headers: map[string]string{
@@ -75,7 +75,7 @@ func (h *BookHandler) CreateBook(c kp.IContext) error {
 		Command:    "get_book",
 		RetryCount: 3,
 		Timeout:    5,
-	}, c.DetailLog(), c.SummaryLog())
+	})
 
 	if err != nil {
 		c.SummaryLog().AddField("ErrorCause", err.Error())
@@ -84,6 +84,8 @@ func (h *BookHandler) CreateBook(c kp.IContext) error {
 			"id":      req.ID,
 		})
 	}
+
+	c.SendMessage("book-log", result)
 
 	c.SummaryLog().End("200", "")
 	return c.Response(http.StatusCreated, map[string]any{

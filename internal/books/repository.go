@@ -2,11 +2,12 @@ package books
 
 import (
 	"fmt"
-	"time"
 
+	"github.com/google/uuid"
 	"github.com/sing3demons/go-library-api/pkg/entities"
 	"github.com/sing3demons/go-library-api/pkg/kp"
 	"github.com/sing3demons/go-library-api/pkg/postgres"
+	"go.opentelemetry.io/otel"
 )
 
 type BookRepository interface {
@@ -28,6 +29,9 @@ const (
 )
 
 func (r *MongoBookRepository) Save(ctx kp.IContext, book *Book) error {
+	cmd := "create_book"
+	c, span := otel.GetTracerProvider().Tracer("gokp").Start(ctx.Context(), fmt.Sprintf("%s-%s", node_postgres, cmd))
+	defer span.End()
 	// var lastInsertId string
 	// err := r.Db.QueryRowContext(ctx, "INSERT INTO books (title, author) VALUES ($1, $2) RETURNING id", book.Title, book.Author).Scan(&lastInsertId)
 	// if err != nil {
@@ -35,14 +39,17 @@ func (r *MongoBookRepository) Save(ctx kp.IContext, book *Book) error {
 	// }
 
 	// book.ID = lastInsertId
-
-	result, err := r.Db.CreateBook(entities.Book{
+	invoke := uuid.NewString()
+	result, err := r.Db.CreateBook(c, entities.Book{
 		Title:  book.Title,
 		Author: book.Author,
 	})
-	ctx.DetailLog().AddOutputRequest(node_postgres, "create_book", fmt.Sprintf("pg-%s", time.Nanosecond.String()), result.RawData, result.Body)
+	ctx.DetailLog().AddOutputRequest(node_postgres, cmd, invoke, result.RawData, result.Body, node_postgres, "")
 
 	if err != nil {
+		ctx.DetailLog().AddInputResponse(node_postgres, cmd, invoke, err.Error(), map[string]string{
+			"error": err.Error(),
+		})
 		return err
 	}
 
@@ -50,14 +57,27 @@ func (r *MongoBookRepository) Save(ctx kp.IContext, book *Book) error {
 	// detailLog.End()
 	book.ID = result.Data.ID
 	book.Href = r.href(book.ID)
+
+	ctx.DetailLog().AddInputResponse(node_postgres, cmd, invoke, book, book)
+
 	return nil
 }
 
 func (r *MongoBookRepository) GetByID(ctx kp.IContext, id string) (*Book, error) {
+	cmd := "get_book"
+	c, span := otel.GetTracerProvider().Tracer("gokp").Start(ctx.Context(), fmt.Sprintf("%s-%s", node_postgres, cmd))
+	defer span.End()
+
+	invoke := uuid.NewString()
 	var book Book
 	// err := r.Db.QueryRowContext(ctx, "SELECT id, title, author FROM books WHERE id = $1", id).Scan(&book.ID, &book.Title, &book.Author)
-	result, err := r.Db.GetBookByID(id)
+	result, err := r.Db.GetBookByID(c, id)
+	ctx.DetailLog().AddOutputRequest(node_postgres, cmd, invoke, result.RawData, result.Body, node_postgres, "")
+
 	if err != nil {
+		ctx.DetailLog().AddInputResponse(node_postgres, cmd, "", err.Error(), map[string]string{
+			"error": err.Error(),
+		})
 		return nil, err
 	}
 	book.ID = result.Data.ID
@@ -67,8 +87,8 @@ func (r *MongoBookRepository) GetByID(ctx kp.IContext, id string) (*Book, error)
 	book.Href = r.href(book.ID)
 
 	// fmt.Println("RawData: ", result.RawData)
-	ctx.DetailLog().AddOutputRequest(node_postgres, "get_book", fmt.Sprintf("pg-%s", time.Nanosecond.String()), result.RawData, result.Body)
 	// detailLog.End()
+	ctx.DetailLog().AddInputResponse(node_postgres, cmd, "", "", book)
 
 	return &book, nil
 }
@@ -78,6 +98,10 @@ func (r *MongoBookRepository) href(id string) string {
 }
 
 func (r *MongoBookRepository) GetALL(ctx kp.IContext, filter map[string]interface{}) ([]*Book, error) {
+	cmd := "get_books"
+	c, span := otel.GetTracerProvider().Tracer("gokp").Start(ctx.Context(), fmt.Sprintf("%s-%s", node_postgres, cmd))
+	defer span.End()
+	invoke := uuid.NewString()
 	var books []*Book
 	// rows, err := r.Db.QueryContext(ctx, "SELECT id, title, author FROM books")
 	// if err != nil {
@@ -92,8 +116,13 @@ func (r *MongoBookRepository) GetALL(ctx kp.IContext, filter map[string]interfac
 	// 	book.Href = r.href(book.ID)
 	// 	books = append(books, &book)
 	// }
-	result, err := r.Db.GetAllBooks(filter)
+	result, err := r.Db.GetAllBooks(c, filter)
+	ctx.DetailLog().AddOutputRequest(node_postgres, "get_book", invoke, result.RawData, result.Body, node_postgres, "")
+
 	if err != nil {
+		ctx.DetailLog().AddInputResponse(node_postgres, cmd, invoke, err.Error(), map[string]string{
+			"error": err.Error(),
+		})
 		return nil, err
 	}
 	for _, b := range result.Data {
@@ -105,7 +134,8 @@ func (r *MongoBookRepository) GetALL(ctx kp.IContext, filter map[string]interfac
 		}
 		books = append(books, &book)
 	}
-	ctx.DetailLog().AddOutputRequest(node_postgres, "get_book", fmt.Sprintf("pg-%s", time.Nanosecond.String()), result.RawData, result.Body)
+	ctx.DetailLog().AddInputResponse(node_postgres, cmd, invoke, "", result)
+
 	// detailLog.End()
 	return books, nil
 }

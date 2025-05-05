@@ -9,6 +9,7 @@ import (
 
 	"github.com/IBM/sarama"
 	"github.com/sing3demons/go-library-api/pkg/kp/logger"
+	"go.opentelemetry.io/otel"
 )
 
 type kafkaContext struct {
@@ -57,6 +58,8 @@ func newConsumer(option *KafkaConfig) (sarama.ConsumerGroup, error) {
 // NewConsumerContext creates a new Kafka context for consumer
 func NewConsumerContext(topic, body string, producer sarama.SyncProducer, log ILogger) IContext {
 	ctx := InitSession(context.Background(), log)
+	ctx, span := otel.GetTracerProvider().Tracer("gokp").Start(ctx, "kafka-consumer-"+topic)
+	defer span.End()
 	return &kafkaContext{
 		topic:    topic,
 		body:     body,
@@ -165,5 +168,9 @@ func (ctx *kafkaContext) Response(code int, data any) error {
 }
 
 func (ctx *kafkaContext) SendMessage(topic string, payload any, opts ...OptionProducerMsg) (RecordMetadata, error) {
+	c, span := otel.GetTracerProvider().Tracer("gokp").Start(ctx.Context(), "kafka-consumer-"+topic)
+	defer span.End()
+
+	ctx.ctx = c
 	return producer(ctx.producer, topic, payload, opts...)
 }

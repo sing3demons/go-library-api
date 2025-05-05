@@ -12,11 +12,11 @@ import (
 
 type DetailLog interface {
 	IsRawDataEnabled() bool
-	AddInputRequest(node, cmd, invoke string, rawData, data any)
+	AddInputRequest(node, cmd, invoke string, rawData, data any, protocol, protocolMethod string)
 	AddInputHttpRequest(node, cmd, invoke string, data InComing, rawData bool, protocol, protocolMethod string)
-	AddOutputRequest(node, cmd, invoke string, rawData, data any)
+	AddOutputRequest(node, cmd, invoke string, rawData, data any, protocol, protocolMethod string)
 	End()
-	AddInputResponse(node, cmd, invoke string, rawData, data any, protocol, protocolMethod string)
+	AddInputResponse(node, cmd, invoke string, rawData, data any)
 	AddOutputResponse(node, cmd, invoke string, rawData, data any)
 	AutoEnd() bool
 }
@@ -89,26 +89,7 @@ func (dl *detailLog) AddInputHttpRequest(node, cmd, invoke string, data InComing
 	})
 }
 
-func (dl *detailLog) AddInputRequest(node, cmd, invoke string, rawData, data any) {
-	if rawData != nil {
-		if _, ok := rawData.(string); !ok {
-			rawData = ToJson(rawData)
-		}
-	}
-	dl.addInput(&logEvent{
-		node:    node,
-		cmd:     cmd,
-		invoke:  invoke,
-		logType: "req",
-		rawData: rawData,
-		data:    data,
-		// protocol:       dl.req.Proto,
-		// protocolMethod: dl.req.Method,
-	})
-}
-
-func (dl *detailLog) AddInputResponse(node, cmd, invoke string, rawData, data any, protocol, protocolMethod string) {
-	resTime := time.Now().Format(time.RFC3339)
+func (dl *detailLog) AddInputRequest(node, cmd, invoke string, rawData, data any, protocol, protocolMethod string) {
 	if rawData != nil {
 		if _, ok := rawData.(string); !ok {
 			rawData = ToJson(rawData)
@@ -118,12 +99,29 @@ func (dl *detailLog) AddInputResponse(node, cmd, invoke string, rawData, data an
 		node:           node,
 		cmd:            cmd,
 		invoke:         invoke,
-		logType:        "res",
+		logType:        "req",
 		rawData:        rawData,
-		data:           ToStruct(data),
-		resTime:        resTime,
+		data:           data,
 		protocol:       protocol,
 		protocolMethod: protocolMethod,
+	})
+}
+
+func (dl *detailLog) AddInputResponse(node, cmd, invoke string, rawData, data any) {
+	resTime := time.Now().Format(time.RFC3339)
+	if rawData != nil {
+		if _, ok := rawData.(string); !ok {
+			rawData = ToJson(rawData)
+		}
+	}
+	dl.addInput(&logEvent{
+		node:    node,
+		cmd:     cmd,
+		invoke:  invoke,
+		logType: "res",
+		rawData: rawData,
+		data:    ToStruct(data),
+		resTime: resTime,
 	})
 }
 
@@ -167,7 +165,7 @@ func (dl *detailLog) addInput(input *logEvent) {
 		}
 	}
 
-	protocolValue := dl.buildValueProtocol(&input.protocol, &input.protocolMethod)
+	protocolValue := dl.buildValueProtocol(input.protocol, input.protocolMethod)
 	inputLog := InputOutputLog{
 		Invoke:   input.invoke,
 		Event:    fmt.Sprintf("%s.%s", input.node, input.cmd),
@@ -180,21 +178,21 @@ func (dl *detailLog) addInput(input *logEvent) {
 	dl.Input = append(dl.Input, inputLog)
 }
 
-func (dl *detailLog) AddOutputRequest(node, cmd, invoke string, rawData, data any) {
+func (dl *detailLog) AddOutputRequest(node, cmd, invoke string, rawData, data any, protocol, protocolMethod string) {
 	if rawData != nil {
 		if _, ok := rawData.(string); !ok {
 			rawData = ToJson(rawData)
 		}
 	}
 	dl.AddOutput(logEvent{
-		node:    node,
-		cmd:     cmd,
-		invoke:  invoke,
-		logType: "rep",
-		rawData: rawData,
-		data:    ToStruct(data),
-		// protocol:       dl.req.Proto,
-		// protocolMethod: dl.req.Method,
+		node:           node,
+		cmd:            cmd,
+		invoke:         invoke,
+		logType:        "rep",
+		rawData:        rawData,
+		data:           ToStruct(data),
+		protocol:       protocol,
+		protocolMethod: protocolMethod,
 	})
 
 	if dl.autoEnd {
@@ -210,9 +208,9 @@ func (dl *detailLog) AddOutput(out logEvent) {
 		dl.timeCounter[out.invoke] = now
 	}
 
-	protocolValue := dl.buildValueProtocol(&out.protocol, &out.protocolMethod)
-	if *protocolValue == "." {
-		protocolValue = nil
+	protocolValue := dl.buildValueProtocol(out.protocol, out.protocolMethod)
+	if protocolValue == "." {
+		protocolValue = ""
 	}
 	outputLog := InputOutputLog{
 		Invoke:   out.invoke,
@@ -253,25 +251,25 @@ func (dl *detailLog) End() {
 	dl.clear()
 }
 
-func (dl *detailLog) buildValueProtocol(protocol, method *string) *string {
-	if protocol == nil {
-		return nil
+func (dl *detailLog) buildValueProtocol(protocol, method string) string {
+	if protocol == "" {
+		return ""
 	}
 
 	// Check out.protocol contains http or https
-	if *protocol != "" {
-		if strings.Contains(*protocol, "HTTPS") {
-			*protocol = "https"
-		} else if strings.Contains(*protocol, "HTTP") {
-			*protocol = "http"
+	if protocol != "" {
+		if strings.Contains(protocol, "HTTPS") {
+			protocol = "https"
+		} else if strings.Contains(protocol, "HTTP") {
+			protocol = "http"
 		}
 	}
-	result := *protocol
-	if method != nil {
-		result += "." + *method
+	result := protocol
+	if method != "" {
+		result += "." + method
 	}
 	result = strings.ToLower(result)
-	return &result
+	return result
 }
 
 func (dl *detailLog) AutoEnd() bool {

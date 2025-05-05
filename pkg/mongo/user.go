@@ -17,7 +17,7 @@ import (
 type MongoStore interface {
 	GetUserByID(id string) (entities.ProcessData[entities.User], error)
 	GetAllUsers(filter map[string]any) (result entities.ProcessData[[]entities.User], err error)
-	CreateUser(user *entities.User) (entities.ProcessData[entities.User], error)
+	CreateUser(ctx context.Context, user *entities.User) (entities.ProcessData[entities.User], error)
 }
 
 type mongoStore struct {
@@ -28,22 +28,24 @@ type mongoStore struct {
 // 	return &mongoStore{mongo: mongo}
 // }
 
-func (m *mongoCollection) CreateUser(user *entities.User) (entities.ProcessData[entities.User], error) {
+func (m *mongoCollection) CreateUser(ctx context.Context, user *entities.User) (entities.ProcessData[entities.User], error) {
+
 	user.ID = uuid.NewString()
 	result := entities.ProcessData[entities.User]{}
 
 	result.Body.Method = "InsertOne"
 	result.Body.Document = user
 	result.Body.Options = nil
-
 	result.Body.Collection = "users"
+	ctx, span := m.addTrace(ctx, result.Body.Method, result.Body.Collection)
+	defer m.sendOperationStats(time.Now(), result.Body.Method, span)
 
 	jsonDocumentBytes, _ := json.Marshal(user)
 	jsonDocument := strings.ReplaceAll(string(jsonDocumentBytes), `"`, "'")
 	result.RawData = fmt.Sprintf("%s.%s(%s)", result.Body.Collection, result.Body.Method, jsonDocument)
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	// ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 
-	defer cancel()
+	// defer cancel()
 
 	_, err := m.coll.InsertOne(ctx, user)
 	if err != nil {
@@ -54,7 +56,7 @@ func (m *mongoCollection) CreateUser(user *entities.User) (entities.ProcessData[
 	return result, nil
 }
 
-func (m *mongoCollection) GetUserByID(id string) (entities.ProcessData[entities.User], error) {
+func (m *mongoCollection) GetUserByID(ctx context.Context, id string) (entities.ProcessData[entities.User], error) {
 	result := entities.ProcessData[entities.User]{}
 
 	result.Body.Method = "FindOne"
@@ -63,9 +65,10 @@ func (m *mongoCollection) GetUserByID(id string) (entities.ProcessData[entities.
 
 	result.Body.Collection = "users"
 
+	ctx, span := m.addTrace(ctx, result.Body.Method, result.Body.Collection)
+	defer m.sendOperationStats(time.Now(), result.Body.Method, span)
+
 	result.RawData = fmt.Sprintf("users.findOne({_id: %s})", id)
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
 
 	var user entities.User
 	err := m.coll.FindOne(ctx, bson.M{"_id": id}).Decode(&user)
@@ -77,19 +80,17 @@ func (m *mongoCollection) GetUserByID(id string) (entities.ProcessData[entities.
 	return result, nil
 }
 
-func (m *mongoCollection) GetAllUsers(filter map[string]any) (result entities.ProcessData[[]entities.User], err error) {
+func (m *mongoCollection) GetAllUsers(ctx context.Context, filter map[string]any) (result entities.ProcessData[[]entities.User], err error) {
 	result.Body.Method = "Find"
 	result.Body.Document = nil
 	result.Body.Options = nil
 
 	result.Body.Collection = "users"
-
+	ctx, span := m.addTrace(ctx, result.Body.Method, result.Body.Collection)
+	defer m.sendOperationStats(time.Now(), result.Body.Method, span)
 	opt := &options.FindOptions{}
 
 	result.RawData = buildMongoRawData("users", bson.D{}, opt)
-
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
 
 	cursor, err := m.coll.Find(ctx, filter)
 	if err != nil {

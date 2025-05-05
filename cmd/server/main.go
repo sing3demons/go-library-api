@@ -29,6 +29,9 @@ func main() {
 		AppConfig: kp.AppConfig{
 			Port:  "8080",
 			LogKP: true,
+			AppName: "todo",
+			Version: "1.0.0",
+			TracerHost: "localhost:4318",
 		},
 		KafkaConfig: kp.KafkaConfig{
 			Brokers: []string{"localhost:29092"},

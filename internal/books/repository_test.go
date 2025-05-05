@@ -36,7 +36,7 @@ var book = Book{
 	Href:   "",
 }
 
-func (m *MockDB) CreateBook(book entities.Book) (entities.ProcessData[entities.Book], error) {
+func (m *MockDB) CreateBook(ctx context.Context, book entities.Book) (entities.ProcessData[entities.Book], error) {
 	var result entities.ProcessData[entities.Book]
 
 	result.Body.Collection = "books"
@@ -66,7 +66,7 @@ func (m *MockDB) CreateBook(book entities.Book) (entities.ProcessData[entities.B
 	return result, nil
 }
 
-func (m *MockDB) GetAllBooks(filter map[string]any) (result entities.ProcessData[[]entities.Book], err error) {
+func (m *MockDB) GetAllBooks(ctx context.Context, filter map[string]any) (result entities.ProcessData[[]entities.Book], err error) {
 	result.Body.Collection = "books"
 	result.Body.Table = "books"
 	result.Body.Query = filter
@@ -100,7 +100,7 @@ func (m *MockDB) GetAllBooks(filter map[string]any) (result entities.ProcessData
 	return result, nil
 }
 
-func (m *MockDB) GetBookByID(id string) (entities.ProcessData[entities.Book], error) {
+func (m *MockDB) GetBookByID(ctx context.Context, id string) (entities.ProcessData[entities.Book], error) {
 	var result entities.ProcessData[entities.Book]
 
 	result.Body.Collection = "books"

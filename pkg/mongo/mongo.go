@@ -2,12 +2,17 @@ package mongo
 
 import (
 	"context"
+	"fmt"
 	"log"
+	"time"
 
 	"github.com/sing3demons/go-library-api/pkg/entities"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
 	"go.mongodb.org/mongo-driver/v2/mongo/readpref"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type SingleResult interface {
@@ -35,9 +40,9 @@ type Collection interface {
 	CountDocuments(context.Context, any, ...options.Lister[options.CountOptions]) (int64, error)
 	UpdateOne(ctx context.Context, filter, update any, opts ...options.Lister[options.UpdateOneOptions]) (*UpdateResult, error)
 
-	GetUserByID(id string) (entities.ProcessData[entities.User], error)
-	GetAllUsers(filter map[string]any) (result entities.ProcessData[[]entities.User], err error)
-	CreateUser(user *entities.User) (entities.ProcessData[entities.User], error)
+	GetUserByID(ctx context.Context, id string) (entities.ProcessData[entities.User], error)
+	GetAllUsers(ctx context.Context, filter map[string]any) (result entities.ProcessData[[]entities.User], err error)
+	CreateUser(ctx context.Context, user *entities.User) (entities.ProcessData[entities.User], error)
 }
 
 type Database interface {
@@ -64,13 +69,16 @@ type UpdateResult struct {
 	UpsertedID    any
 }
 type mongoClient struct {
-	cl *mongo.Client
+	cl     *mongo.Client
+	tracer trace.Tracer
 }
 type mongoDatabase struct {
-	db *mongo.Database
+	db     *mongo.Database
+	tracer trace.Tracer
 }
 type mongoCollection struct {
-	coll *mongo.Collection
+	coll   *mongo.Collection
+	tracer trace.Tracer
 }
 
 type mongoSingleResult struct {
@@ -96,7 +104,8 @@ func NewMongo(uri string) Client {
 	}
 
 	return &mongoClient{
-		cl: cl,
+		cl:     cl,
+		tracer: otel.GetTracerProvider().Tracer("gokp-mongo"),
 	}
 }
 
@@ -109,14 +118,18 @@ func (m *mongoClient) Ping(ctx context.Context, rp *readpref.ReadPref) error {
 }
 
 func (m *mongoClient) Database(name string) Database {
+
 	return &mongoDatabase{
-		db: m.cl.Database(name),
+		db:     m.cl.Database(name),
+		tracer: m.tracer,
 	}
 }
 
 func (m *mongoDatabase) Collection(name string) Collection {
+
 	return &mongoCollection{
-		coll: m.db.Collection(name),
+		coll:   m.db.Collection(name),
+		tracer: m.tracer,
 	}
 }
 func (m *mongoCollection) CountDocuments(ctx context.Context, filter any, opts ...options.Lister[options.CountOptions]) (int64, error) {
@@ -128,6 +141,29 @@ func (m *mongoCollection) InsertOne(ctx context.Context, document any, opts ...o
 		InsertedID:   r.InsertedID,
 		Acknowledged: r.Acknowledged,
 	}, err
+}
+
+func (c *mongoCollection) addTrace(ctx context.Context, method, collection string) (context.Context, trace.Span) {
+	if c.tracer != nil {
+		contextWithTrace, span := c.tracer.Start(ctx, fmt.Sprintf("mongodb-%v", method))
+
+		span.SetAttributes(
+			attribute.String("mongo.collection", collection),
+		)
+
+		return contextWithTrace, span
+	}
+
+	return ctx, nil
+}
+
+func (c *mongoCollection) sendOperationStats(startTime time.Time, method string, span trace.Span) {
+	duration := time.Since(startTime).Microseconds()
+
+	if span != nil {
+		defer span.End()
+		span.SetAttributes(attribute.Int64(fmt.Sprintf("mongo.%v.duration", method), duration))
+	}
 }
 
 func newDeleteResult(r *mongo.DeleteResult) *DeleteResult {

@@ -2,6 +2,7 @@ package kp
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -12,7 +13,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/sing3demons/go-library-api/pkg/kp/logger"
+	"go.opentelemetry.io/otel"
 )
 
 type TMap map[string]string
@@ -74,7 +75,7 @@ type ApiResponse struct {
 // 	summaryLog        logger.SummaryLog
 // }
 
-func RequestHttp(optionAttributes OptionAttributes, detailLog logger.DetailLog, summaryLog logger.SummaryLog) (any, error) {
+func RequestHttp(ctx IContext, optionAttributes OptionAttributes) (any, error) {
 	var requestAttributes []RequestAttributes
 	switch attr := optionAttributes.(type) {
 	case []RequestAttributes:
@@ -84,6 +85,9 @@ func RequestHttp(optionAttributes OptionAttributes, detailLog logger.DetailLog, 
 	default:
 		return nil, errors.New("invalid optionAttributes type")
 	}
+
+	detailLog := ctx.DetailLog()
+	summaryLog := ctx.SummaryLog()
 
 	var (
 		wg        sync.WaitGroup
@@ -99,7 +103,7 @@ func RequestHttp(optionAttributes OptionAttributes, detailLog logger.DetailLog, 
 		wg.Add(1)
 		attrCopy := attr // avoid loop variable capture
 
-		go func(attr RequestAttributes) {
+		go func(ctx context.Context, attr RequestAttributes) {
 			defer wg.Done()
 			semaphore <- struct{}{}        // acquire semaphore
 			defer func() { <-semaphore }() // release semaphore
@@ -137,14 +141,15 @@ func RequestHttp(optionAttributes OptionAttributes, detailLog logger.DetailLog, 
 				processLog.QueryString = attr.Query
 			}
 
-			detailLog.AddOutputRequest(attr.Service, attr.Command, attr.Invoke, processLog, processLog)
+			detailLog.AddOutputRequest(attr.Service, attr.Command, attr.Invoke, processLog, processLog, "http", strings.ToLower(string(attr.Method)))
 
-			resp, err := SendRequest(RequestAttr{
+			resp, err := SendRequest(ctx, RequestAttr{
 				Method:  string(attr.Method),
 				URL:     attr.URL,
 				Headers: attr.Headers,
 				Body:    attr.Body,
 				Timeout: attr.Timeout,
+				Service: attr.Service,
 			})
 
 			if err != nil {
@@ -188,7 +193,7 @@ func RequestHttp(optionAttributes OptionAttributes, detailLog logger.DetailLog, 
 				RawBody:    string(bodyBytes),
 				StatusText: resp.Status,
 			}
-		}(attrCopy)
+		}(ctx.Context(), attrCopy)
 	}
 
 	wg.Wait()
@@ -198,11 +203,10 @@ func RequestHttp(optionAttributes OptionAttributes, detailLog logger.DetailLog, 
 		service := response.attr.Service
 		command := response.attr.Command
 		invoke := response.attr.Invoke
-		method := response.attr.Method
 
 		resultCode := fmt.Sprintf("%d", response.Status)
 		summaryLog.AddSuccess(service, command, resultCode, response.StatusText)
-		detailLog.AddInputResponse(service, command, invoke, nil, response, "http", string(method))
+		detailLog.AddInputResponse(service, command, invoke, nil, response)
 
 		mu.Lock()
 		responses = append(responses, response)
@@ -353,9 +357,12 @@ type RequestAttr struct {
 	Headers map[string]string
 	Body    any
 	Timeout int // in seconds
+	Service string
 }
 
-func SendRequest(attr RequestAttr) (*http.Response, error) {
+func SendRequest(c context.Context, attr RequestAttr) (*http.Response, error) {
+	ctx, span := otel.GetTracerProvider().Tracer("gokp").Start(c, strings.ToLower(fmt.Sprintf("http-%s-%s", attr.Method, attr.Service)))
+	defer span.End()
 	// Encode body if present
 	var body io.Reader
 	if attr.Body != nil {
@@ -367,7 +374,7 @@ func SendRequest(attr RequestAttr) (*http.Response, error) {
 	}
 
 	// Create request
-	req, err := http.NewRequest(string(attr.Method), attr.URL, body)
+	req, err := http.NewRequestWithContext(ctx, string(attr.Method), attr.URL, body)
 	if err != nil {
 		return nil, err
 	}
