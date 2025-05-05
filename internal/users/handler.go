@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/sing3demons/go-library-api/kp"
+	"github.com/sing3demons/go-library-api/pkg/kp"
 )
 
 type UserHandler struct {

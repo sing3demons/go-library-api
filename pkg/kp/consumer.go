@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/IBM/sarama"
-	"github.com/sing3demons/go-library-api/kp/logger"
+	"github.com/sing3demons/go-library-api/pkg/kp/logger"
 )
 
 type kafkaContext struct {

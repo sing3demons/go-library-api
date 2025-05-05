@@ -3,7 +3,7 @@ package books
 import (
 	"net/http"
 
-	"github.com/sing3demons/go-library-api/kp"
+	"github.com/sing3demons/go-library-api/pkg/kp"
 )
 
 type BookHandler struct {

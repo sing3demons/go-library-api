@@ -1,8 +1,6 @@
 package books
 
-import (
-	"github.com/sing3demons/go-library-api/kp"
-)
+import "github.com/sing3demons/go-library-api/pkg/kp"
 
 type BookService interface {
 	GetBook(ctx kp.IContext, id string) (*Book, error)

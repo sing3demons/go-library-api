@@ -3,8 +3,8 @@ package users
 import (
 	"fmt"
 
-	"github.com/sing3demons/go-library-api/kp"
 	"github.com/sing3demons/go-library-api/pkg/entities"
+	"github.com/sing3demons/go-library-api/pkg/kp"
 	m "github.com/sing3demons/go-library-api/pkg/mongo"
 	"go.mongodb.org/mongo-driver/v2/bson"
 )

@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/sing3demons/go-library-api/internal/users"
-	"github.com/sing3demons/go-library-api/kp"
+	"github.com/sing3demons/go-library-api/pkg/kp"
 	"github.com/stretchr/testify/assert"
 )
 

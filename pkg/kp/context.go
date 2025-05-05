@@ -8,7 +8,7 @@ import (
 	"io"
 
 	"github.com/gin-gonic/gin"
-	"github.com/sing3demons/go-library-api/kp/logger"
+	"github.com/sing3demons/go-library-api/pkg/kp/logger"
 )
 
 type IContext interface {

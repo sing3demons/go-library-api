@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sing3demons/go-library-api/kp"
 	"github.com/sing3demons/go-library-api/pkg/entities"
+	"github.com/sing3demons/go-library-api/pkg/kp"
 	"github.com/sing3demons/go-library-api/pkg/postgres"
 	"github.com/stretchr/testify/assert"
 )

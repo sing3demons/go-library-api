@@ -3,7 +3,7 @@ package main
 import (
 	"github.com/sing3demons/go-library-api/internal/books"
 	"github.com/sing3demons/go-library-api/internal/users"
-	"github.com/sing3demons/go-library-api/kp"
+	"github.com/sing3demons/go-library-api/pkg/kp"
 	"github.com/sing3demons/go-library-api/pkg/mongo"
 	"github.com/sing3demons/go-library-api/pkg/postgres"
 )
@@ -30,10 +30,10 @@ func main() {
 			Port:  "8080",
 			LogKP: true,
 		},
-		// KafkaConfig: app.KafkaConfig{
-		// 	Brokers: []string{"localhost:29092"},
-		// 	GroupID: "my-group",
-		// },
+		KafkaConfig: kp.KafkaConfig{
+			Brokers: []string{"localhost:29092"},
+			GroupID: "my-group",
+		},
 	}, logger)
 
 	// Books module

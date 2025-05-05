@@ -1,8 +1,6 @@
 package users
 
-import (
-	"github.com/sing3demons/go-library-api/kp"
-)
+import "github.com/sing3demons/go-library-api/pkg/kp"
 
 type UserService interface {
 	RegisterUser(ctx kp.IContext, name, email string) (*User, error)
@@ -33,9 +31,3 @@ func (s *userService) GetUserById(ctx kp.IContext, id string) (*User, error) {
 func (s *userService) GetAllUsers(ctx kp.IContext) ([]*User, error) {
 	return s.repo.GetALL(ctx, nil)
 }
-
-// func generateID() string {
-// 	b := make([]byte, 4)
-// 	rand.Read(b)
-// 	return fmt.Sprintf("%x", b)
-// }

@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/sing3demons/go-library-api/kp/logger"
+	"github.com/sing3demons/go-library-api/pkg/kp/logger"
 )
 
 func (m *MockLogger) NewLog(ctx context.Context, initInvoke, scenario string) (logger.DetailLog, logger.SummaryLog) {

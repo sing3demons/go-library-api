@@ -5,7 +5,7 @@ import (
 	"os"
 
 	"github.com/google/uuid"
-	"github.com/sing3demons/go-library-api/kp/logger"
+	"github.com/sing3demons/go-library-api/pkg/kp/logger"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
